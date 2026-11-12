@@ -1,5 +1,10 @@
-install:
+LINT := bin/golangci-lint
+
+install: $(LINT)
 	go mod download
+
+$(LINT):
+	curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b bin/ v2.15.0
 
 build:
 	go build -o bin/server ./cmd/server
@@ -15,9 +20,11 @@ run-client:
 run-client-gui:
 	go run ./cmd/gui
 
-lint:
-	gofmt -l .
-	go vet ./...
+lint: $(LINT)
+	$(LINT) run ./...
+
+fmt: $(LINT)
+	$(LINT) fmt ./...
 
 test:
 	go test -race ./...
