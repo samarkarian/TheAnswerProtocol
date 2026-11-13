@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install
+        run: make install
+
+      - name: Lint (format + linters)
+        run: make lint
+
+      - name: Build
+        run: make build
+
+      - name: Tests
+        run: make test
