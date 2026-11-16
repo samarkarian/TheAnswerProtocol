@@ -23,44 +23,62 @@ type Registery struct {
 	players map[string]*Player
 }
 
-func (r *Registery) Add(name string, p *Player) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.players = make(map[string]*Player)
-	if _, ok := r.players[name]; ok {
-		return fmt.Errorf("%w", ErrNameTaken)
+func NewRegistery() *Registery {
+	return &Registery{
+		players: make(map[string]*Player),
 	}
-	r.players[name] = &Player{
+}
+
+func NewPlayer(name string) *Player {
+	return &Player{
 		name:    name,
 		connect: true,
 	}
+}
+
+func (r *Registery) Add(name string) error {
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.players[name]; ok {
+		fmt.Println("hh")
+		return fmt.Errorf("%w", ErrNameTaken)
+	}
+	r.players[name] = NewPlayer(name)
+	fmt.Fprintln(os.Stdout, r.players)
 	return nil
 }
 
 func (r *Registery) Remove(name string) error {
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.players, name)
+	fmt.Fprintln(os.Stdout, r.players)
 
 	return nil
 }
 
-func handle(conn net.Conn) {
+func handle(conn net.Conn, r *Registery) {
+
 	defer conn.Close()
-	var register Registery
-	var player Player
 	sc := bufio.NewScanner(conn)
 	for sc.Scan() {
-		cmd, args, found := strings.Cut(sc.Text(), " ")
+		cmd, args, found := strings.Cut(strings.TrimSpace(sc.Text()), " ")
 		if !found {
 			fmt.Fprintln(os.Stderr, "No argument found")
 		}
+		name := args
 		cmd = strings.ToUpper(cmd)
 		switch cmd {
 		case "CONNECT":
-			register.Add(args, &player)
+			if err := r.Add(name); err != nil {
+				fmt.Fprintln(conn, err)
+				return
+			}
 			fmt.Fprintln(conn, "OK connected")
 		case "QUIT":
+			r.Remove(name)
 			fmt.Fprintln(conn, "OK bye")
 			return
 		default:
@@ -75,6 +93,7 @@ func handle(conn net.Conn) {
 func main() {
 
 	ln, err := net.Listen("tcp", "0.0.0.0:4243")
+	registry := NewRegistery()
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -87,6 +106,6 @@ func main() {
 			continue
 		}
 		fmt.Fprintln(conn, "OK hello proto=1")
-		go handle(conn)
+		go handle(conn, registry)
 	}
 }
