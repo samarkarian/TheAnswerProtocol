@@ -41,11 +41,9 @@ func (r *Registery) Add(name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, ok := r.players[name]; ok {
-		fmt.Println("hh")
 		return fmt.Errorf("%w", ErrNameTaken)
 	}
 	r.players[name] = NewPlayer(name)
-	fmt.Fprintln(os.Stdout, r.players)
 	return nil
 }
 
@@ -54,37 +52,44 @@ func (r *Registery) Remove(name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.players, name)
-	fmt.Fprintln(os.Stdout, r.players)
 
 	return nil
 }
 
 func handle(conn net.Conn, r *Registery) {
 
+	name := ""
 	defer conn.Close()
+	defer func() {
+        if name != "" {
+            r.Remove(name)
+        }
+    }()
+
 	sc := bufio.NewScanner(conn)
 	for sc.Scan() {
 		cmd, args, found := strings.Cut(strings.TrimSpace(sc.Text()), " ")
 		if !found {
 			fmt.Fprintln(os.Stderr, "No argument found")
 		}
-		name := args
 		cmd = strings.ToUpper(cmd)
 		switch cmd {
 		case "CONNECT":
-			if err := r.Add(name); err != nil {
+			args = strings.ToLower(args)
+			if err := r.Add(args); err != nil {
 				fmt.Fprintln(conn, err)
 				return
 			}
+			name = args
 			fmt.Fprintln(conn, "OK connected")
 		case "QUIT":
-			r.Remove(name)
 			fmt.Fprintln(conn, "OK bye")
 			return
 		default:
 			fmt.Fprintln(conn, ErrUnknownCmd)
 		}
 	}
+
 	if err := sc.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 	}
