@@ -6,15 +6,15 @@ install: $(LINT)
 $(LINT):
 	curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b bin/ v2.15.0
 
-build: build-server build-cli build-gui
+build: build-server build-client build-client-gui
 
 build-server:
 	go build -o bin/server ./cmd/server
 
-build-cli:
+build-client:
 	go build -o bin/cli ./cmd/cli
 
-build-gui:
+build-client-gui:
 	go build -o bin/gui ./cmd/gui
 
 run-server:
