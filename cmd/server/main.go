@@ -11,20 +11,20 @@ import (
 )
 
 var ErrNameTaken = errors.New("ERR 201 NAME_IN_USE")
-var ErrUnknownCmd = errors.New("ERR unknown command")
+var ErrBadRequest = errors.New("ERR 400 BAD_REQUEST")
 
 type Player struct {
 	name    string
 	connect bool
 }
 
-type Registery struct {
+type Registry struct {
 	mu      sync.Mutex
 	players map[string]*Player
 }
 
-func NewRegistery() *Registery {
-	return &Registery{
+func NewRegistry() *Registry {
+	return &Registry{
 		players: make(map[string]*Player),
 	}
 }
@@ -36,49 +36,55 @@ func NewPlayer(name string) *Player {
 	}
 }
 
-func (r *Registery) Add(name string) error {
+func (r *Registry) Add(name string) error {
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, ok := r.players[name]; ok {
-		return fmt.Errorf("%w", ErrNameTaken)
+		return ErrNameTaken
 	}
 	r.players[name] = NewPlayer(name)
 	return nil
 }
 
-func (r *Registery) Remove(name string) error {
+func (r *Registry) Remove(name string) {
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.players, name)
 
-	return nil
 }
 
-func handle(conn net.Conn, r *Registery) {
+func handle(conn net.Conn, r *Registry) {
 
 	name := ""
 	defer conn.Close()
 	defer func() {
-        if name != "" {
-            r.Remove(name)
-        }
-    }()
+		if name != "" {
+			r.Remove(name)
+		}
+	}()
 
 	sc := bufio.NewScanner(conn)
 	for sc.Scan() {
 		cmd, args, found := strings.Cut(strings.TrimSpace(sc.Text()), " ")
-		if !found {
-			fmt.Fprintln(os.Stderr, "No argument found")
-		}
+		args = strings.TrimSpace(args)
+		fields := strings.Fields(args)
 		cmd = strings.ToUpper(cmd)
 		switch cmd {
 		case "CONNECT":
+			if name != "" {
+				fmt.Fprintln(conn, ErrBadRequest)
+				continue
+			}
+			if !found || len(fields) > 1 {
+				fmt.Fprintln(conn, ErrBadRequest)
+				continue
+			}
 			args = strings.ToLower(args)
 			if err := r.Add(args); err != nil {
 				fmt.Fprintln(conn, err)
-				return
+				continue
 			}
 			name = args
 			fmt.Fprintln(conn, "OK connected")
@@ -86,7 +92,7 @@ func handle(conn net.Conn, r *Registery) {
 			fmt.Fprintln(conn, "OK bye")
 			return
 		default:
-			fmt.Fprintln(conn, ErrUnknownCmd)
+			fmt.Fprintln(conn, ErrBadRequest)
 		}
 	}
 
@@ -98,12 +104,12 @@ func handle(conn net.Conn, r *Registery) {
 func main() {
 
 	ln, err := net.Listen("tcp", "0.0.0.0:4243")
-	registry := NewRegistery()
-
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+
+	registry := NewRegistry()
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
