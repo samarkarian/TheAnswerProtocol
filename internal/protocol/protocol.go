@@ -1,3 +1,4 @@
+// Package protocol implements parsing and formatting of RFC 42TAP lines.
 package protocol
 
 const MaxLineLen = 1024
