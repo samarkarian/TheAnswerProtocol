@@ -40,6 +40,7 @@ const (
 	KindOK      Kind = "OK"
 	KindErr     Kind = "ERR"
 	KindEvent   Kind = "EVT"
+)
 
 // ErrorCode struct contains the code and the associated error message
 type ErrorCode struct {
