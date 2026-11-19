@@ -28,3 +28,23 @@ const (
 	ScopeGroup  = "GROUP"
 	ScopeStats  = "STATS"
 )
+
+// ErrorCode struct contains the code and the associated error message
+type ErrorCode struct {
+	Code    int
+	Message string
+}
+
+var (
+	ErrNameInUse          = ErrorCode{201, "NAME_IN_USE"}
+	ErrNoExit             = ErrorCode{301, "NO_EXIT"}
+	ErrBadRequest         = ErrorCode{400, "BAD_REQUEST"}
+	ErrNotInGroup         = ErrorCode{401, "NOT_IN_GROUP"}
+	ErrAlreadyInGroup     = ErrorCode{402, "ALREADY_IN_GROUP"}
+	ErrNotAuthenticated   = ErrorCode{403, "NOT_AUTHENTICATED"}
+	ErrItemNotFound       = ErrorCode{404, "ITEM_NOT_FOUND"}
+	ErrItemNotInInventory = ErrorCode{404, "ITEM_NOT_IN_INVENTORY"}
+	ErrNPCNotFound        = ErrorCode{404, "NPC_NOT_FOUND"}
+	ErrNPCNotHostile      = ErrorCode{405, "NPC_NOT_HOSTILE"}
+	ErrNoQuestAvailable   = ErrorCode{406, "NO_QUEST_AVAILABLE"}
+)
