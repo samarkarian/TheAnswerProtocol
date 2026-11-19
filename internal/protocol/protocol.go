@@ -28,3 +28,16 @@ const (
 	ScopeGroup  = "GROUP"
 	ScopeStats  = "STATS"
 )
+
+// Kind is the type of a line sent by the server.
+// Its value is the keyword that starts the line.
+type Kind string
+
+// Kinds of server lines. KindUnknown is the zero value
+// of Kind; ParseLine never returns it.
+const (
+	KindUnknown Kind = ""
+	KindOK      Kind = "OK"
+	KindErr     Kind = "ERR"
+	KindEvent   Kind = "EVT"
+)
