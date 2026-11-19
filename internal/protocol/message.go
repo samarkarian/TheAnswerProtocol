@@ -92,3 +92,24 @@ func ParseLine(line string) (Message, error) {
 		return Message{}, ErrUnknownMessage
 	}
 }
+
+// ParseKV parses space-separated key=value pairs, as found in OK responses
+// and STATS events, into a map. Words without "=" and pairs with an empty
+// key are skipped. An empty value is kept, and for a duplicate key the last
+// value wins. It never returns nil.
+//
+//	ParseKV("hello proto=1") // {"proto": "1"}
+//	ParseKV("a=1 a=2")       // {"a": "2"}
+func ParseKV(data string) map[string]string {
+	kv := make(map[string]string)
+
+	for word := range strings.FieldsSeq(data) {
+		key, value, found := strings.Cut(word, "=")
+		// skip words without "=" and pairs with an empty key
+		if !found || key == "" {
+			continue
+		}
+		kv[key] = value
+	}
+	return kv
+}
