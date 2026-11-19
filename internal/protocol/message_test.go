@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"errors"
+	"maps"
 	"testing"
 )
 
@@ -92,6 +93,47 @@ func TestParseLine(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("ParseLine(%q)\n got  %+v\n want %+v", tt.line, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseKV(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+		want map[string]string
+	}{
+		{"greeting", "hello proto=1", map[string]string{"proto": "1"}},
+		{"move", "room=loc.bakery", map[string]string{"room": "loc.bakery"}},
+		{"take", "taken=item.herbs", map[string]string{"taken": "item.herbs"}},
+		{"who / stats", "players=5", map[string]string{"players": "5"}},
+		{"group", "group=g1", map[string]string{"group": "g1"}},
+
+		{"two pairs", "a=1 b=2", map[string]string{"a": "1", "b": "2"}},
+		{"surrounding spaces", "  room=loc.bakery   ", map[string]string{"room": "loc.bakery"}},
+		{"multiple spaces between", "a=1    b=2", map[string]string{"a": "1", "b": "2"}},
+
+		{"empty data", "", map[string]string{}},
+		{"single word", "connected", map[string]string{}},
+		{"words mixed with pairs", "hello world proto=1", map[string]string{"proto": "1"}},
+		{"json is not key=value", `{"hp": 80}`, map[string]string{}},
+
+		{"value containing =", "a=b=c", map[string]string{"a": "b=c"}},
+		{"case preserved", "Room=X", map[string]string{"Room": "X"}},
+		{"accents in value", "name=élodie", map[string]string{"name": "élodie"}},
+
+		{"empty key ignored", "=x", map[string]string{}},
+		{"lone equal sign", "=", map[string]string{}},
+		{"empty value kept", "room=", map[string]string{"room": ""}},
+		{"duplicate key, last wins", "a=1 a=2", map[string]string{"a": "2"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ParseKV(tt.data)
+			if !maps.Equal(got, tt.want) {
+				t.Errorf("ParseKV(%q) = %v, want %v", tt.data, got, tt.want)
 			}
 		})
 	}
