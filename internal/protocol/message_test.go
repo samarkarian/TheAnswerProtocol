@@ -1,0 +1,98 @@
+package protocol
+
+import (
+	"errors"
+	"testing"
+)
+
+func TestParseLine(t *testing.T) {
+	tests := []struct {
+		name    string
+		line    string
+		want    Message
+		wantErr error
+	}{
+		// OK
+		{"ok with data", "OK connected", Message{Kind: KindOK, Data: "connected"}, nil},
+		{"ok alone", "OK", Message{Kind: KindOK}, nil},
+		{"ok key=value", "OK hello proto=1", Message{Kind: KindOK, Data: "hello proto=1"}, nil},
+		{"ok json", `OK {"hp": 80, "max_hp": 100}`, Message{Kind: KindOK, Data: `{"hp": 80, "max_hp": 100}`}, nil},
+		{"ok free text", "OK Welcome to my bakery!", Message{Kind: KindOK, Data: "Welcome to my bakery!"}, nil},
+
+		// end line
+		{"trailing LF", "OK connected\n", Message{Kind: KindOK, Data: "connected"}, nil},
+		{"trailing CRLF", "OK connected\r\n", Message{Kind: KindOK, Data: "connected"}, nil},
+		{"trailing CR", "OK connected\r", Message{Kind: KindOK, Data: "connected"}, nil},
+
+		// ERR
+		{"err", "ERR 404 ITEM_NOT_FOUND", Message{Kind: KindErr, Code: 404, ErrMsg: "ITEM_NOT_FOUND"}, nil},
+		{"err unknown code", "ERR 400 BAD_REQUEST", Message{Kind: KindErr, Code: 400, ErrMsg: "BAD_REQUEST"}, nil},
+		{"err alone", "ERR", Message{}, ErrMalformedError},
+		{"err without message", "ERR 404", Message{}, ErrMalformedError},
+		{"err code not a number", "ERR abc NOPE", Message{}, ErrMalformedError},
+		{"err code too short", "ERR 12 NOPE", Message{}, ErrMalformedError},
+		{"err code too long", "ERR 1234 NOPE", Message{}, ErrMalformedError},
+		{"err code with sign", "ERR +12 NOPE", Message{}, ErrMalformedError},
+		{"err negative code", "ERR -12 NOPE", Message{}, ErrMalformedError},
+		// we tolerate spaces before msg
+		{"err with space before msg", "ERR 404  X", Message{Kind: KindErr, Code: 404, ErrMsg: " X"}, nil},
+
+		// EVT
+		{"evt presence", "EVT ROOM PRESENCE ENTER alice",
+			Message{Kind: KindEvent, Category: "ROOM", Type: "PRESENCE", Payload: "ENTER alice"}, nil},
+		{"evt chat with accents", "EVT GLOBAL CHAT bob salut à tous, ça va ?",
+			Message{Kind: KindEvent, Category: "GLOBAL", Type: "CHAT", Payload: "bob salut à tous, ça va ?"}, nil},
+		{"evt group invite", "EVT GROUP INVITE alice",
+			Message{Kind: KindEvent, Category: "GROUP", Type: "INVITE", Payload: "alice"}, nil},
+		{"evt stats has no type", "EVT STATS players=5",
+			Message{Kind: KindEvent, Category: "STATS", Payload: "players=5"}, nil},
+		{"evt unknown category", "EVT COMBAT HIT goblin 12",
+			Message{Kind: KindEvent, Category: "COMBAT", Type: "HIT", Payload: "goblin 12"}, nil},
+		{"evt alone", "EVT", Message{}, ErrMalformedEvent},
+		{"evt without type", "EVT ROOM", Message{}, ErrMalformedEvent},
+		// as ERR, we accept spaces before payload
+		{"evt stats multiple spaces before", "EVT STATS  players=5",
+			Message{Kind: KindEvent, Category: "STATS", Payload: " players=5"}, nil},
+
+		// unknown first word
+		{"client command", "LOOK", Message{}, ErrUnknownMessage},
+		{"lowercase ok", "ok connected", Message{}, ErrUnknownMessage},
+		{"ok glued to data", "OKconnected", Message{}, ErrUnknownMessage},
+
+		// ValidateLine errors
+		{"empty line", "", Message{}, ErrEmptyLine},
+		{"invalid utf8", "OK \xff", Message{}, ErrInvalidUTF8},
+		{"control char", "OK \x1b[2J", Message{}, ErrControlChar},
+
+		// blank fields
+		{"ok trailing space", "OK ", Message{Kind: KindOK}, nil},
+		{"err empty message", "ERR 404 ", Message{}, ErrMalformedError},
+		{"evt empty category", "EVT  ROOM CHAT x", Message{}, ErrMalformedEvent},
+		{"evt empty type", "EVT ROOM  CHAT x", Message{}, ErrMalformedEvent},
+		{"evt empty payload", "EVT ROOM CHAT ", Message{}, ErrMalformedEvent},
+		{"evt stats empty payload", "EVT STATS ", Message{}, ErrMalformedEvent},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseLine(tt.line)
+
+			if tt.wantErr != nil {
+				if !errors.Is(err, tt.wantErr) {
+					t.Fatalf("ParseLine(%q) error = %v, want %v", tt.line, err, tt.wantErr)
+				}
+				if got != (Message{}) {
+					t.Errorf("ParseLine(%q) = %+v, want an empty Message on error", tt.line, got)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("ParseLine(%q) unexpected error: %v", tt.line, err)
+			}
+			if got != tt.want {
+				t.Errorf("ParseLine(%q)\n got  %+v\n want %+v", tt.line, got, tt.want)
+			}
+		})
+	}
+}
