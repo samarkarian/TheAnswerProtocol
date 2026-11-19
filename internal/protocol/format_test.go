@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -144,6 +145,57 @@ func TestFormatEvent(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("FormatEvent(%q, %q, %q) = %q, want %q", tt.cat, tt.typ, tt.payload, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFormatCommand(t *testing.T) {
+	tests := []struct {
+		name    string
+		cmdName string
+		cmdArgs string
+		want    string
+		wantErr error
+	}{
+		{"wrong command name", "WH O", "", "", ErrInvalidCommand},
+		{"who test", "Who", "", "WHO\n", nil},
+		{"drop test with spaces", "DROP", "     example     ", "DROP example\n", nil},
+		{"drop test with spaces and character control", "DROP", "     exa\nmple     ", "", ErrControlChar},
+		{"look with spaces", "LOOK", "          ", "LOOK\n", nil},
+
+		{"empty name", "", "x", "", ErrInvalidCommand},
+		{"digit in name", "TAKE2", "", "", ErrInvalidCommand},
+		{"non-ASCII letter", "TAKÉ", "", "", ErrInvalidCommand},
+		{"newline in name", "LOOK\n", "", "", ErrInvalidCommand},
+		{"space before name", " LOOK", "", "", ErrInvalidCommand},
+		{"underscore in name", "COMPLETE_QUEST", "", "", ErrInvalidCommand}, // voir remarque
+		{"lowercase with args", "take", "Healing Herbs", "TAKE Healing Herbs\n", nil},
+
+		{"inner spaces kept", "CHAT", "GLOBAL salut   à tous", "CHAT GLOBAL salut   à tous\n", nil},
+		{"accents and emoji", "CHAT", "ROOM ça marche 🎉", "CHAT ROOM ça marche 🎉\n", nil},
+		{"trailing newline trimmed", "CHAT", "ROOM salut\n", "CHAT ROOM salut\n", nil},
+		{"tab at the edges trimmed", "DROP", "\texample\t", "DROP example\n", nil},
+
+		{"command injection", "CHAT", "ROOM a\nQUIT", "", ErrControlChar},
+		{"carriage return inside", "CHAT", "ROOM a\rb", "", ErrControlChar},
+		{"tab inside", "CHAT", "ROOM a\tb", "", ErrControlChar},
+		{"terminal escape", "CHAT", "ROOM \x1b[2J", "", ErrControlChar},
+		{"invalid utf8", "DROP", "caf\xc3", "", ErrInvalidUTF8},
+
+		{"exactly max length", "TAKE", strings.Repeat("a", MaxLineLen-5),
+			"TAKE " + strings.Repeat("a", MaxLineLen-5) + "\n", nil},
+		{"one byte over max", "TAKE", strings.Repeat("a", MaxLineLen-4), "", ErrLineTooLong},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FormatCommand(tt.cmdName, tt.cmdArgs)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("FormatCommand(%q, %q) error = %v, want %v", tt.cmdName, tt.cmdArgs, err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Errorf("FormatCommand(%q, %q) = %q, want %q", tt.cmdName, tt.cmdArgs, got, tt.want)
 			}
 		})
 	}
