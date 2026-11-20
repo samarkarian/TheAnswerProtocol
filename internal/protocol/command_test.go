@@ -93,3 +93,57 @@ func TestParseChatArgs(t *testing.T) {
 		})
 	}
 }
+
+func TestParseGroupArgs(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     string
+		wantSub  string
+		wantUser string
+		wantErrs []error // toutes les erreurs que errors.Is doit reconnaître
+	}{
+		{"create", "CREATE", GroupCreate, "", nil},
+		{"leave lowercase", "leave", GroupLeave, "", nil},
+		{"create trailing spaces", "CREATE   ", GroupCreate, "", nil},
+
+		{"invite", "INVITE bob", GroupInvite, "bob", nil},
+		{"join mixed case, name kept", "join Alice", GroupJoin, "Alice", nil},
+		{"spaces around name trimmed", "INVITE   bob  ", GroupInvite, "bob", nil},
+		{"accented name", "INVITE élodie", GroupInvite, "élodie", nil},
+
+		{"invite without name", "INVITE", "", "", []error{ErrMalformedCommand, ErrInvalidUsername}},
+		{"invite empty name", "INVITE ", "", "", []error{ErrMalformedCommand, ErrInvalidUsername}},
+		{"join blank name", "JOIN    ", "", "", []error{ErrMalformedCommand, ErrInvalidUsername}},
+		{"name with space", "JOIN alice bob", "", "", []error{ErrMalformedCommand, ErrInvalidUsername}},
+
+		{"create with argument", "CREATE now", "", "", []error{ErrMalformedCommand}},
+		{"leave with argument", "LEAVE alice", "", "", []error{ErrMalformedCommand}},
+
+		{"unknown sub-command", "KICK bob", "", "", []error{ErrMalformedCommand}},
+		{"empty args", "", "", "", []error{ErrMalformedCommand}},
+		{"leading space", " INVITE bob", "", "", []error{ErrMalformedCommand}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sub, user, err := ParseGroupArgs(tt.args)
+
+			if len(tt.wantErrs) == 0 && err != nil {
+				t.Fatalf("ParseGroupArgs(%q) unexpected error: %v", tt.args, err)
+			}
+			if len(tt.wantErrs) > 0 && err == nil {
+				t.Fatalf("ParseGroupArgs(%q) error = nil, want %v", tt.args, tt.wantErrs)
+			}
+			for _, want := range tt.wantErrs {
+				if !errors.Is(err, want) {
+					t.Errorf("ParseGroupArgs(%q) error = %v, want it to match %v", tt.args, err, want)
+				}
+			}
+
+			if sub != tt.wantSub || user != tt.wantUser {
+				t.Errorf("ParseGroupArgs(%q) = (%q, %q), want (%q, %q)",
+					tt.args, sub, user, tt.wantSub, tt.wantUser)
+			}
+		})
+	}
+}
