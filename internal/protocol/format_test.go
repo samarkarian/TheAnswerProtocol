@@ -235,3 +235,39 @@ func TestFormatLineTooLong(t *testing.T) {
 		})
 	}
 }
+
+// FormatErr takes no free text: every code and message is a constant of
+// protocol.go. Writing each line by hand also checks those constants against
+// RFC 42TAP 8.2 (400 and 403 are not in the RFC table: a team decision).
+func TestFormatErr(t *testing.T) {
+	tests := []struct {
+		name string
+		e    ErrorCode
+		want string
+	}{
+		{"name in use", ErrNameInUse, "ERR 201 NAME_IN_USE\n"},
+		{"no exit", ErrNoExit, "ERR 301 NO_EXIT\n"},
+		{"bad request", ErrBadRequest, "ERR 400 BAD_REQUEST\n"},
+		{"not in group", ErrNotInGroup, "ERR 401 NOT_IN_GROUP\n"},
+		{"already in group", ErrAlreadyInGroup, "ERR 402 ALREADY_IN_GROUP\n"},
+		{"not authenticated", ErrNotAuthenticated, "ERR 403 NOT_AUTHENTICATED\n"},
+		{"item not found", ErrItemNotFound, "ERR 404 ITEM_NOT_FOUND\n"},
+		{"item not in inventory", ErrItemNotInInventory, "ERR 404 ITEM_NOT_IN_INVENTORY\n"},
+		{"npc not found", ErrNPCNotFound, "ERR 404 NPC_NOT_FOUND\n"},
+		{"npc not hostile", ErrNPCNotHostile, "ERR 405 NPC_NOT_HOSTILE\n"},
+		{"no quest available", ErrNoQuestAvailable, "ERR 406 NO_QUEST_AVAILABLE\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := FormatErr(tt.e)
+			if got != tt.want {
+				t.Errorf("FormatErr(%+v) = %q, want %q", tt.e, got, tt.want)
+			}
+			m, err := ParseLine(got)
+			if err != nil || m.Kind != KindErr || m.Code != tt.e.Code || m.ErrMsg != tt.e.Message {
+				t.Errorf("ParseLine(%q) = %+v, %v; want the same code and message", got, m, err)
+			}
+		})
+	}
+}
