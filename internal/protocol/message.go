@@ -132,3 +132,18 @@ func ParsePresence(payload string) (action, name string, err error) {
 		return "", "", ErrMalformedEvent
 	}
 }
+
+// ParseChat splits a CHAT payload such as "alice hey guys" into username and message.
+// It returns an error if:
+//   - username is invalid
+//   - message is empty
+func ParseChat(payload string) (username, message string, err error) {
+	username, message, _ = strings.Cut(payload, " ")
+	if err = ValidateUsername(username); err != nil {
+		return "", "", fmt.Errorf("%w: %w", ErrMalformedEvent, err)
+	}
+	if strings.TrimSpace(message) == "" {
+		return "", "", ErrMalformedEvent
+	}
+	return username, message, nil
+}
