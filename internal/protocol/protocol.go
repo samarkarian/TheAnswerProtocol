@@ -35,6 +35,14 @@ const (
 	PresenceLeave = "LEAVE"
 )
 
+// GROUP sub-commands
+const (
+	GroupCreate = "CREATE"
+	GroupInvite = "INVITE"
+	GroupJoin   = "JOIN"
+	GroupLeave  = "LEAVE"
+)
+
 // Kind is the type of a line sent by the server.
 // Its value is the keyword that starts the line.
 type Kind string

@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -55,6 +56,32 @@ func ParseChatArgs(cmdArgs string) (string, string, error) {
 	switch scope {
 	case ScopeGlobal, ScopeRoom, ScopeGroup:
 		return scope, message, nil
+	default:
+		return "", "", ErrMalformedCommand
+	}
+}
+
+// ParseGroupArgs splits the arguments of a GROUP command, such as "invite alice",
+// into an upper-case sub-command and a username (empty for CREATE and LEAVE).
+// It returns ErrMalformedCommand if the sub-command is not CREATE, INVITE, JOIN
+// or LEAVE, if CREATE or LEAVE has an argument, or if INVITE or JOIN has no valid
+// username; in that last case the error also matches ErrInvalidUsername.
+func ParseGroupArgs(cmdArgs string) (string, string, error) {
+	subCmd, name, _ := strings.Cut(cmdArgs, " ")
+	subCmd = strings.ToUpper(subCmd)
+	name = strings.TrimSpace(name)
+
+	switch subCmd {
+	case GroupCreate, GroupLeave:
+		if name != "" {
+			return "", "", ErrMalformedCommand
+		}
+		return subCmd, "", nil
+	case GroupInvite, GroupJoin:
+		if err := ValidateUsername(name); err != nil {
+			return "", "", fmt.Errorf("%w: %w", ErrMalformedCommand, err)
+		}
+		return subCmd, name, nil
 	default:
 		return "", "", ErrMalformedCommand
 	}
