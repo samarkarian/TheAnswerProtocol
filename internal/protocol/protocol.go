@@ -29,6 +29,12 @@ const (
 	ScopeStats  = "STATS"
 )
 
+// PRESENCE actions
+const (
+	PresenceEnter = "ENTER"
+	PresenceLeave = "LEAVE"
+)
+
 // Kind is the type of a line sent by the server.
 // Its value is the keyword that starts the line.
 type Kind string
