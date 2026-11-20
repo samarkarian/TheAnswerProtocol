@@ -122,7 +122,7 @@ func ParseKV(payload string) map[string]string {
 //   - action is unknown
 func ParsePresence(payload string) (action, name string, err error) {
 	action, name, _ = strings.Cut(payload, " ")
-	if err := ValidateUsername(name); err != nil {
+	if err = ValidateUsername(name); err != nil {
 		return "", "", fmt.Errorf("%w: %w", ErrMalformedEvent, err)
 	}
 	switch action {
