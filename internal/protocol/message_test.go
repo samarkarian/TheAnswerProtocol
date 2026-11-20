@@ -138,3 +138,50 @@ func TestParseKV(t *testing.T) {
 		})
 	}
 }
+
+func TestParsePresence(t *testing.T) {
+	tests := []struct {
+		name       string
+		payload    string
+		wantAction string
+		wantName   string
+		wantErrs   []error
+	}{
+		{"enter", "ENTER alice", PresenceEnter, "alice", nil},
+		{"leave", "LEAVE bob", PresenceLeave, "bob", nil},
+		{"accented name", "ENTER élodie", PresenceEnter, "élodie", nil},
+
+		{"no name", "ENTER", "", "", []error{ErrMalformedEvent, ErrInvalidUsername}},
+		{"empty name", "ENTER ", "", "", []error{ErrMalformedEvent, ErrInvalidUsername}},
+		{"empty payload", "", "", "", []error{ErrMalformedEvent, ErrInvalidUsername}},
+		{"name with space", "ENTER alice bob", "", "", []error{ErrMalformedEvent, ErrInvalidUsername}},
+		{"double space", "ENTER  alice", "", "", []error{ErrMalformedEvent, ErrInvalidUsername}},
+
+		{"unknown action", "JUMP alice", "", "", []error{ErrMalformedEvent}},
+		{"lowercase action", "enter alice", "", "", []error{ErrMalformedEvent}},
+		{"empty action", " alice", "", "", []error{ErrMalformedEvent}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			action, name, err := ParsePresence(tt.payload)
+
+			if len(tt.wantErrs) == 0 && err != nil {
+				t.Fatalf("ParsePresence(%q) unexpected error: %v", tt.payload, err)
+			}
+			if len(tt.wantErrs) > 0 && err == nil {
+				t.Fatalf("ParsePresence(%q) error = nil, want %v", tt.payload, tt.wantErrs)
+			}
+			for _, want := range tt.wantErrs {
+				if !errors.Is(err, want) {
+					t.Errorf("ParsePresence(%q) error = %v, want it to match %v", tt.payload, err, want)
+				}
+			}
+
+			if action != tt.wantAction || name != tt.wantName {
+				t.Errorf("ParsePresence(%q) = (%q, %q), want (%q, %q)",
+					tt.payload, action, name, tt.wantAction, tt.wantName)
+			}
+		})
+	}
+}
