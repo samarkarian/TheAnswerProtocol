@@ -53,3 +53,43 @@ func TestParseCommand(t *testing.T) {
 		})
 	}
 }
+
+func TestParseChatArgs(t *testing.T) {
+	tests := []struct {
+		name        string
+		args        string
+		wantScope   string
+		wantMessage string
+		wantErr     error
+	}{
+		{"global", "GLOBAL hello", ScopeGlobal, "hello", nil},
+		{"room lowercase", "room hi", ScopeRoom, "hi", nil},
+		{"group mixed case", "Group yo", ScopeGroup, "yo", nil},
+
+		{"accents and emoji", "GLOBAL ça va ? 🎉", ScopeGlobal, "ça va ? 🎉", nil},
+		{"inner spaces kept, edges trimmed", "GLOBAL   salut   à tous  ", ScopeGlobal, "salut   à tous", nil},
+		{"protocol words not interpreted", "ROOM EVT GLOBAL CHAT bob", ScopeRoom, "EVT GLOBAL CHAT bob", nil},
+
+		{"stats is not a chat scope", "STATS hi", "", "", ErrMalformedCommand},
+		{"unknown scope", "PARTOUT hi", "", "", ErrMalformedCommand},
+		{"empty scope", " hi", "", "", ErrMalformedCommand},
+
+		{"no message", "GLOBAL", "", "", ErrMalformedCommand},
+		{"empty message", "GLOBAL ", "", "", ErrMalformedCommand},
+		{"blank message", "GLOBAL    ", "", "", ErrMalformedCommand},
+		{"empty args", "", "", "", ErrMalformedCommand},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scope, message, err := ParseChatArgs(tt.args)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("ParseChatArgs(%q) error = %v, want %v", tt.args, err, tt.wantErr)
+			}
+			if scope != tt.wantScope || message != tt.wantMessage {
+				t.Errorf("ParseChatArgs(%q) = (%q, %q), want (%q, %q)",
+					tt.args, scope, message, tt.wantScope, tt.wantMessage)
+			}
+		})
+	}
+}
