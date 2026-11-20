@@ -185,3 +185,51 @@ func TestParsePresence(t *testing.T) {
 		})
 	}
 }
+
+func TestParseChat(t *testing.T) {
+	tests := []struct {
+		name        string
+		payload     string
+		wantUser    string
+		wantMessage string
+		wantErrs    []error
+	}{
+		{"simple", "alice hey guys", "alice", "hey guys", nil},
+		{"one word message", "bob hi", "bob", "hi", nil},
+		{"accents and emoji", "élodie ça va ? 🎉", "élodie", "ça va ? 🎉", nil},
+		{"inner spaces kept", "alice a   b    c", "alice", "a   b    c", nil},
+		{"leading spaces kept", "alice   ascii art", "alice", "  ascii art", nil},
+		{"trailing spaces kept", "alice hi  ", "alice", "hi  ", nil},
+		{"protocol words not interpreted", "alice ENTER room=loc.x EVT", "alice", "ENTER room=loc.x EVT", nil},
+
+		{"empty payload", "", "", "", []error{ErrMalformedEvent, ErrInvalidUsername}},
+		{"empty username", " alice hi", "", "", []error{ErrMalformedEvent, ErrInvalidUsername}},
+
+		{"no message", "alice", "", "", []error{ErrMalformedEvent}},
+		{"empty message", "alice ", "", "", []error{ErrMalformedEvent}},
+		{"only spaces", "alice    ", "", "", []error{ErrMalformedEvent}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			user, message, err := ParseChat(tt.payload)
+
+			if len(tt.wantErrs) == 0 && err != nil {
+				t.Fatalf("ParseChat(%q) unexpected error: %v", tt.payload, err)
+			}
+			if len(tt.wantErrs) > 0 && err == nil {
+				t.Fatalf("ParseChat(%q) error = nil, want %v", tt.payload, tt.wantErrs)
+			}
+			for _, want := range tt.wantErrs {
+				if !errors.Is(err, want) {
+					t.Errorf("ParseChat(%q) error = %v, want it to match %v", tt.payload, err, want)
+				}
+			}
+
+			if user != tt.wantUser || message != tt.wantMessage {
+				t.Errorf("ParseChat(%q) = (%q, %q), want (%q, %q)",
+					tt.payload, user, message, tt.wantUser, tt.wantMessage)
+			}
+		})
+	}
+}
