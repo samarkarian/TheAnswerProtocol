@@ -53,3 +53,34 @@ func TestValidateLine(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateUsername(t *testing.T) {
+	tests := []struct {
+		name     string
+		username string
+		wantErr  error
+	}{
+		{"simple", "alice", nil},
+		{"with digits", "bob42", nil},
+		{"with symbols", "x_x-x.x", nil},
+		{"accents", "élodie", nil},
+		{"emoji", "gg🎉", nil},
+
+		{"empty", "", ErrInvalidUsername},
+		{"space inside", "alice bob", ErrInvalidUsername},
+		{"leading space", " alice", ErrInvalidUsername},
+		{"trailing space", "alice ", ErrInvalidUsername},
+		{"tab", "alice\tbob", ErrInvalidUsername},
+		{"newline", "alice\nbob", ErrInvalidUsername},
+		{"non-breaking space", "alice\u00a0bob", ErrInvalidUsername},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateUsername(tt.username)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("ValidateUsername(%q) = %v, want %v", tt.username, err, tt.wantErr)
+			}
+		})
+	}
+}
