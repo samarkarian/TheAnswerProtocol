@@ -13,13 +13,8 @@ func FormatOK(data string) (string, error) {
 		return "OK\n", nil
 	}
 
-	err := ValidateLine(data)
-	if err != nil {
-		return "", err
-	}
-
 	s := fmt.Sprintf("OK %s", data)
-	err = ValidateLine(s)
+	err := ValidateLine(s)
 	if err != nil {
 		return "", err
 	}
@@ -38,13 +33,18 @@ func FormatOKJSON(v any) (string, error) {
 		return "", err
 	}
 
-	s := fmt.Sprintf("OK %s", buffer.String())
-	ValidateLine(s + "\n")
-	// if len(s) > 1025 {
-	// 	return "", ErrLineTooLong
-	// }
+	s := "OK " + strings.TrimSuffix(buffer.String(), "\n")
+	err = ValidateLine(s)
+	if err != nil {
+		return "", err
+	}
 
-	return s, nil
+	return s + "\n", nil
+}
+
+func FormatErr(e ErrorCode) string {
+
+	return fmt.Sprintf("ERR %d %s\n", e.Code, e.Message)
 }
 
 func FormatEvent(cat, typ, payload string) (string, error) {
@@ -71,19 +71,12 @@ func FormatEvent(cat, typ, payload string) (string, error) {
 		}
 	}
 
-	for _, s := range newSlc {
-		err := ValidateLine(s)
-		if err != nil {
-			return "", err
-		}
+	s := strings.Join(newSlc, " ")
+	s = fmt.Sprintf("EVT %s", s)
+	err := ValidateLine(s)
+	if err != nil {
+		return "", err
 	}
 
-	s := strings.Join(newSlc, " ")
-	s = fmt.Sprintf("EVT %s\n", s)
-	ValidateLine(s + "\n")
-	// if len(s) > 1025 {
-	// 	return "", ErrLineTooLong
-	// }
-
-	return s, nil
+	return s + "\n", nil
 }
