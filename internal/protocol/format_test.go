@@ -6,8 +6,10 @@ import (
 	"testing"
 )
 
-// A "\n" or "\r" inside a piece would let a player inject a fake line,
-// so every Format function refuses it with ErrControlChar (from validate.go).
+// Every Format function checks the whole line with ValidateLine: a "\n" or
+// "\r" would let a player inject a fake line, and an escape sequence would
+// reach the other players' terminals. A line built here must also be one that
+// ParseLine accepts, which the tests check for every valid case.
 
 func TestFormatOK(t *testing.T) {
 	tests := []struct {
@@ -24,6 +26,9 @@ func TestFormatOK(t *testing.T) {
 
 		{"newline injection", "bye\nEVT GLOBAL CHAT admin hi", "", ErrControlChar},
 		{"carriage return", "bye\r", "", ErrControlChar},
+		{"terminal escape", "\x1b[2J", "", ErrControlChar},
+		{"tab inside", "a\tb", "", ErrControlChar},
+		{"invalid UTF-8", "caf\xc3", "", ErrInvalidUTF8},
 	}
 
 	for _, tt := range tests {
@@ -34,6 +39,12 @@ func TestFormatOK(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("FormatOK(%q) = %q, want %q", tt.data, got, tt.want)
+			}
+			if tt.wantErr == nil {
+				m, err := ParseLine(got)
+				if err != nil || m.Kind != KindOK || m.Data != tt.data {
+					t.Errorf("ParseLine(%q) = %+v, %v; want OK with the same data", got, m, err)
+				}
 			}
 		})
 	}
@@ -96,6 +107,27 @@ func TestFormatOKJSON(t *testing.T) {
 			false,
 		},
 		{
+			// json.Marshal would write \u0026, \u003c and \u003e: unreadable in nc
+			"HTML characters are not escaped",
+			QuestOffer{
+				QuestID:     "fetch_herbs",
+				Description: "Bring me 3 herbs & 1 <rare> flower",
+				Reward:      "gold_coin",
+				Status:      "available",
+			},
+			`OK {"quest_id":"fetch_herbs","description":"Bring me 3 herbs & 1 <rare> flower",` +
+				`"reward":"gold_coin","status":"available"}` + "\n",
+			false,
+		},
+		{
+			// json escapes \n and the other C0 characters, but not DEL (0x7f)
+			// nor U+0080-U+009F: only ValidateLine catches them
+			"control character json lets through",
+			[]string{"a\x7fb"},
+			"",
+			true,
+		},
+		{
 			"value json cannot encode",
 			make(chan int),
 			"",
@@ -111,6 +143,11 @@ func TestFormatOKJSON(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("FormatOKJSON(%v)\n got %q\nwant %q", tt.v, got, tt.want)
+			}
+			if !tt.wantErr {
+				if m, err := ParseLine(got); err != nil || m.Kind != KindOK {
+					t.Errorf("ParseLine(%q) = %+v, %v; want an OK line", got, m, err)
+				}
 			}
 		})
 	}
@@ -135,6 +172,17 @@ func TestFormatEvent(t *testing.T) {
 		{"carriage return in payload", ScopeRoom, "CHAT", "alice hi\r", "", ErrControlChar},
 		{"newline in category", "ROOM\n", "CHAT", "alice hi", "", ErrControlChar},
 		{"newline in type", ScopeRoom, "CHAT\n", "alice hi", "", ErrControlChar},
+		{"terminal escape in payload", ScopeRoom, "CHAT", "alice \x1b[2J", "", ErrControlChar},
+		{"tab in payload", ScopeRoom, "CHAT", "alice a\tb", "", ErrControlChar},
+		{"invalid UTF-8 in payload", ScopeRoom, "CHAT", "alice caf\xc3", "", ErrInvalidUTF8},
+
+		// never build a line that ParseLine refuses or splits differently
+		{"empty payload", ScopeRoom, "CHAT", "", "", ErrMalformedEvent},
+		{"empty payload for stats", ScopeStats, "", "", "", ErrMalformedEvent},
+		{"empty category", "", "CHAT", "alice hi", "", ErrMalformedEvent},
+		{"empty type outside stats", ScopeRoom, "", "alice hi", "", ErrMalformedEvent},
+		{"space in category", "ROOM X", "CHAT", "alice hi", "", ErrMalformedEvent},
+		{"space in type", ScopeRoom, "CHAT X", "alice hi", "", ErrMalformedEvent},
 	}
 
 	for _, tt := range tests {
@@ -145,6 +193,80 @@ func TestFormatEvent(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("FormatEvent(%q, %q, %q) = %q, want %q", tt.cat, tt.typ, tt.payload, got, tt.want)
+			}
+			if tt.wantErr == nil {
+				m, err := ParseLine(got)
+				if err != nil || m.Category != tt.cat || m.Type != tt.typ || m.Payload != tt.payload {
+					t.Errorf("ParseLine(%q) = %+v, %v; want the same category, type and payload", got, m, err)
+				}
+			}
+		})
+	}
+}
+
+// RFC 42TAP 9.4 recommends 1024 bytes per line. The subject sets no other
+// limit, so it applies to what the server sends too: a longer line would be
+// refused by ParseLine (and probably by other groups' clients).
+func TestFormatLineTooLong(t *testing.T) {
+	long := strings.Repeat("a", MaxLineLen)
+	tests := []struct {
+		name    string
+		format  func() (string, error)
+		wantErr error
+	}{
+		{"OK at exactly the limit", func() (string, error) { return FormatOK(strings.Repeat("a", MaxLineLen-3)) }, nil},
+		{"OK one byte over", func() (string, error) { return FormatOK(strings.Repeat("a", MaxLineLen-2)) }, ErrLineTooLong},
+		{"event over the limit", func() (string, error) { return FormatEvent(ScopeRoom, "CHAT", "alice "+long) }, ErrLineTooLong},
+		// "EVT ROOM CHAT " is 14 bytes: each piece is short, the whole line is not
+		{"event at exactly the limit", func() (string, error) { return FormatEvent(ScopeRoom, "CHAT", strings.Repeat("a", MaxLineLen-14)) }, nil},
+		{"event one byte over", func() (string, error) { return FormatEvent(ScopeRoom, "CHAT", strings.Repeat("a", MaxLineLen-13)) }, ErrLineTooLong},
+		{"JSON over the limit", func() (string, error) { return FormatOKJSON([]string{long}) }, ErrLineTooLong},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.format()
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("error = %v, want %v", err, tt.wantErr)
+			}
+			if n := len(strings.TrimSuffix(got, "\n")); n > MaxLineLen {
+				t.Errorf("line is %d bytes, want at most %d", n, MaxLineLen)
+			}
+		})
+	}
+}
+
+// FormatErr takes no free text: every code and message is a constant of
+// protocol.go. Writing each line by hand also checks those constants against
+// RFC 42TAP 8.2 (400 and 403 are not in the RFC table: a team decision).
+func TestFormatErr(t *testing.T) {
+	tests := []struct {
+		name string
+		e    ErrorCode
+		want string
+	}{
+		{"name in use", ErrNameInUse, "ERR 201 NAME_IN_USE\n"},
+		{"no exit", ErrNoExit, "ERR 301 NO_EXIT\n"},
+		{"bad request", ErrBadRequest, "ERR 400 BAD_REQUEST\n"},
+		{"not in group", ErrNotInGroup, "ERR 401 NOT_IN_GROUP\n"},
+		{"already in group", ErrAlreadyInGroup, "ERR 402 ALREADY_IN_GROUP\n"},
+		{"not authenticated", ErrNotAuthenticated, "ERR 403 NOT_AUTHENTICATED\n"},
+		{"item not found", ErrItemNotFound, "ERR 404 ITEM_NOT_FOUND\n"},
+		{"item not in inventory", ErrItemNotInInventory, "ERR 404 ITEM_NOT_IN_INVENTORY\n"},
+		{"npc not found", ErrNPCNotFound, "ERR 404 NPC_NOT_FOUND\n"},
+		{"npc not hostile", ErrNPCNotHostile, "ERR 405 NPC_NOT_HOSTILE\n"},
+		{"no quest available", ErrNoQuestAvailable, "ERR 406 NO_QUEST_AVAILABLE\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := FormatErr(tt.e)
+			if got != tt.want {
+				t.Errorf("FormatErr(%+v) = %q, want %q", tt.e, got, tt.want)
+			}
+			m, err := ParseLine(got)
+			if err != nil || m.Kind != KindErr || m.Code != tt.e.Code || m.ErrMsg != tt.e.Message {
+				t.Errorf("ParseLine(%q) = %+v, %v; want the same code and message", got, m, err)
 			}
 		})
 	}
