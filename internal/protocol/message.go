@@ -2,11 +2,12 @@ package protocol
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
 
-// Errors returned by ParseLine
+// Errors returned by parse functions
 var (
 	ErrUnknownMessage = errors.New("protocol: unknown message type")
 	ErrMalformedError = errors.New("protocol: malformed ERR line")
@@ -112,4 +113,22 @@ func ParseKV(payload string) map[string]string {
 		kv[key] = value
 	}
 	return kv
+}
+
+// ParsePresence splits a PRESENCE payload such as "ENTER alice" into its action and username.
+// It returns an error if:
+//   - action or username is empty
+//   - username is invalid
+//   - action is unknown
+func ParsePresence(payload string) (action, name string, err error) {
+	action, name, _ = strings.Cut(payload, " ")
+	if err := ValidateUsername(name); err != nil {
+		return "", "", fmt.Errorf("%w: %w", ErrMalformedEvent, err)
+	}
+	switch action {
+	case PresenceEnter, PresenceLeave:
+		return action, name, nil
+	default:
+		return "", "", ErrMalformedEvent
+	}
 }
