@@ -100,10 +100,10 @@ func ParseLine(line string) (Message, error) {
 //
 //	ParseKV("hello proto=1") // {"proto": "1"}
 //	ParseKV("a=1 a=2")       // {"a": "2"}
-func ParseKV(data string) map[string]string {
+func ParseKV(payload string) map[string]string {
 	kv := make(map[string]string)
 
-	for word := range strings.FieldsSeq(data) {
+	for word := range strings.FieldsSeq(payload) {
 		key, value, found := strings.Cut(word, "=")
 		// skip words without "=" and pairs with an empty key
 		if !found || key == "" {
