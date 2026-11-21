@@ -74,4 +74,6 @@ var (
 	ErrNPCNotFound        = ErrorCode{404, "NPC_NOT_FOUND"}
 	ErrNPCNotHostile      = ErrorCode{405, "NPC_NOT_HOSTILE"}
 	ErrNoQuestAvailable   = ErrorCode{406, "NO_QUEST_AVAILABLE"}
+	ErrConnectionFailed   = ErrorCode{900, "CONNECTION_FAILED"}
+	ErrSendFailed         = ErrorCode{901, "SEND_FAILED"}
 )
