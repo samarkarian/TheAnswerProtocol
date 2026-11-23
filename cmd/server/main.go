@@ -1,5 +1,16 @@
 package main
 
-func main() {
+import (
+	"fmt"
+	"os"
 
+	"github.com/samarkarian/TheAnswerProtocol/internal/server"
+)
+
+func main() {
+	err := server.Start()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
