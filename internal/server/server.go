@@ -26,11 +26,17 @@ func Start() error {
 		s, err := protocol.FormatOK("hello proto=1")
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			fmt.Fprint(conn, protocol.FormatErr(protocol.ErrSendFailed))
-			conn.Close()
+			if _, err := fmt.Fprint(conn, protocol.FormatErr(protocol.ErrSendFailed)); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			if err := conn.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
 			continue
 		}
-		fmt.Fprint(conn, s)
+		if _, err := fmt.Fprint(conn, s); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
 		go HandleConnection(NewPlayer(conn), registry)
 	}
 }

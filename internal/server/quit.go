@@ -11,8 +11,12 @@ func Quit(player *Player) {
 	s, err := protocol.FormatOK("bye")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrSendFailed))
+		if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrSendFailed)); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
 		return
 	}
-	fmt.Fprint(player.conn, s)
+	if _, err := fmt.Fprint(player.conn, s); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
 }

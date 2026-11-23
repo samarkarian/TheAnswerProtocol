@@ -11,25 +11,35 @@ import (
 func Connect(player *Player, command protocol.Command, registry *Registry) bool {
 
 	if player.name != "" {
-		fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+		if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+			return true
+		}
 		return false
 	}
 	if err := protocol.ValidateUsername(command.Args); err != nil {
-		fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+		if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+			return true
+		}
 		return false
 	}
 	name := strings.ToLower(command.Args)
 	if err := registry.Add(name, player); err != nil {
 		fmt.Fprint(os.Stderr, err)
-		fmt.Fprint(player.conn, err)
+		if _, writeErr := fmt.Fprint(player.conn, err); writeErr != nil {
+			return true
+		}
 		return false
 	}
 	s, err := protocol.FormatOK("connected")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrConnectionFailed))
+		if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrConnectionFailed)); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
 		return true
 	}
-	fmt.Fprint(player.conn, s)
+	if _, err := fmt.Fprint(player.conn, s); err != nil {
+		return true
+	}
 	return false
 }

@@ -11,7 +11,9 @@ import (
 func requireAuthentication(command protocol.Command, player *Player) bool {
 
 	if command.Name != "CONNECT" && command.Name != "QUIT" && player.name == "" {
-		fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrNotAuthenticated))
+		if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrNotAuthenticated)); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
 		return false
 	}
 	return true
@@ -19,7 +21,11 @@ func requireAuthentication(command protocol.Command, player *Player) bool {
 
 func HandleConnection(player *Player, registry *Registry) {
 
-	defer player.conn.Close()
+	defer func() {
+		if err := player.conn.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}()
 	defer func() {
 		if player.name != "" {
 			registry.Remove(player.name)
@@ -30,7 +36,9 @@ func HandleConnection(player *Player, registry *Registry) {
 	for sc.Scan() {
 		command, err := protocol.ParseCommand(sc.Text())
 		if err != nil {
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 			continue
 		}
 		if authenticated := requireAuthentication(command, player); !authenticated {
@@ -42,36 +50,64 @@ func HandleConnection(player *Player, registry *Registry) {
 				return
 			}
 		case "LOOK":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "MOVE":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "CHAT":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "WHO":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "GROUP":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "TAKE":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "DROP":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "INVENTORY":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "TALK":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "ATTACK":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "STATUS":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "QUEST":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "QUESTS":
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		case "QUIT":
 			Quit(player)
 			return
 		default:
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest))
+			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+				return
+			}
 		}
 	}
 
