@@ -4,11 +4,19 @@ import (
 	"fmt"
 	"net"
 	"os"
+	// "encoding/json"
 
 	"github.com/samarkarian/TheAnswerProtocol/internal/protocol"
 )
 
 func Start() error {
+
+	byteFile, err := os.ReadFile("../../data/world.json")
+	if err != nil {
+		return err
+	}
+	file := string(byteFile)
+	fmt.Print(file)
 
 	ln, err := net.Listen("tcp", "0.0.0.0:4243")
 
