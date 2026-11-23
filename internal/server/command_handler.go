@@ -11,9 +11,9 @@ import (
 func requireAuthentication(command protocol.Command, player *Player) bool {
 
 	if command.Name != "CONNECT" && command.Name != "QUIT" && player.name == "" {
-			fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrNotAuthenticated))
-			return false
-		}
+		fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrNotAuthenticated))
+		return false
+	}
 	return true
 }
 
