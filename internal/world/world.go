@@ -22,3 +22,9 @@ type World struct {
 
 	byID map[string]*Room // index built by Load, not in world.json
 }
+
+// Room returns the room with the given ID, and whether it exists.
+func (w *World) Room(id string) (*Room, bool) {
+	room, ok := w.byID[id]
+	return room, ok
+}
