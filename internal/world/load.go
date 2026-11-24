@@ -3,10 +3,14 @@ package world
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 )
+
+// Error returned when a room exists with the same ID
+var ErrDuplicateRoom = errors.New("world: duplicate room")
 
 // Load reads and decodes the world file and indexes its rooms by ID. It does not check that the world is consistent: see Validate.
 func Load(path string) (*World, error) {
