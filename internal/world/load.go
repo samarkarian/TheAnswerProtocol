@@ -1,6 +1,7 @@
 package world
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,15 +10,14 @@ import (
 
 // Load reads and decodes the world file and indexes its rooms by ID. It does not check that the world is consistent: see Validate.
 func Load(path string) (*World, error) {
-	f, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("world: %w", err)
 	}
-	defer f.Close()
 
 	var world World
 
-	dec := json.NewDecoder(f)
+	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&world); err != nil {
 		return nil, fmt.Errorf("world: decode %s: %w", path, err)
