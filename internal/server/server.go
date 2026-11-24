@@ -33,6 +33,9 @@ func LoadGameData() (GameData, error) {
 func Start() error {
 
 	game, err := LoadGameData()
+	if err != nil {
+		return err
+	}
 	gameServer := GameServer{
 		Game: game,
 	}
@@ -64,6 +67,6 @@ func Start() error {
 		if _, err := fmt.Fprint(conn, s); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
-		go HandleConnection(NewPlayer(conn), registry, &gameServer)
+		go HandleConnection(NewPlayer(conn, gameServer.Game.Start), registry, &gameServer)
 	}
 }
