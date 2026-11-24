@@ -1,22 +1,41 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
-	// "encoding/json"
 
 	"github.com/samarkarian/TheAnswerProtocol/internal/protocol"
 )
 
+type GameServer struct {
+	Game GameData
+}
+
+func LoadGameData() (GameData, error) {
+
+	var game GameData
+
+	byteFile, err := os.ReadFile("data/world.json")
+	if err != nil {
+		return game, err
+	}
+
+	err = json.Unmarshal(byteFile, &game)
+	if err != nil {
+		return game, err
+	}
+
+	return game, err
+}
+
 func Start() error {
 
-	byteFile, err := os.ReadFile("../../data/world.json")
-	if err != nil {
-		return err
+	game, err := LoadGameData()
+	gameServer := GameServer{
+		Game: game,
 	}
-	file := string(byteFile)
-	fmt.Print(file)
 
 	ln, err := net.Listen("tcp", "0.0.0.0:4243")
 
@@ -45,6 +64,6 @@ func Start() error {
 		if _, err := fmt.Fprint(conn, s); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
-		go HandleConnection(NewPlayer(conn), registry)
+		go HandleConnection(NewPlayer(conn), registry, &gameServer)
 	}
 }

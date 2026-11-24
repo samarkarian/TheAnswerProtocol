@@ -19,13 +19,14 @@ func requireAuthentication(command protocol.Command, player *Player) bool {
 	return true
 }
 
-func HandleConnection(player *Player, registry *Registry) {
+func HandleConnection(player *Player, registry *Registry, gameServer *GameServer) {
 
 	defer func() {
 		if err := player.conn.Close(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}()
+
 	defer func() {
 		if player.name != "" {
 			registry.Remove(player.name)
