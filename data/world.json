@@ -1,0 +1,122 @@
+{
+    "spawn": "loc.hall",
+    "rooms": [
+        {
+            "id": "loc.hall",
+            "name": "Hall",
+            "description": "blabla",
+            "exits": {
+                "north": "loc.bocal",
+                "west": "loc.wc",
+                "east": "loc.gaming_room",
+                "south": "loc.outside"
+            }
+        },
+        {
+            "id": "loc.bocal",
+            "name": "Bocal",
+            "description": "blabla",
+            "exits": {
+                "north": "loc.cluster",
+                "south": "loc.hall"
+            }
+        },
+        {
+            "id": "loc.cluster",
+            "name": "Cluster",
+            "description": "blabla",
+            "exits": {
+                "east": "loc.break_room",
+                "south": "loc.bocal"
+            }
+        },
+        {
+            "id": "loc.break_room",
+            "name": "Break Room",
+            "description": "blabla",
+            "exits": {
+                "west": "loc.cluster",
+                "east": "loc.lunch_room"
+            }
+        },
+        {
+            "id": "loc.lunch_room",
+            "name": "Lunch Room",
+            "description": "blabla",
+            "exits": {
+                "west": "loc.break_room",
+                "south": "loc.snack"
+            }
+        },
+        {
+            "id": "loc.snack",
+            "name": "Snacking Area",
+            "description": "blabla",
+            "exits": {
+                "north": "loc.lunch_room",
+                "south": "loc.cluster2"
+            }
+        },
+        {
+            "id": "loc.cluster2",
+            "name": "Cluster 2",
+            "description": "blabla",
+            "exits": {
+                "north": "loc.snack",
+                "west": "loc.gaming_room"
+            }
+        },
+        {
+            "id": "loc.gaming_room",
+            "name": "Gaming Room",
+            "description": "blabla",
+            "exits": {
+                "east": "loc.cluster2",
+                "west": "loc.hall"
+            }
+        },
+        {
+            "id": "loc.outside",
+            "name": "Outside",
+            "description": "blabla",
+            "exits": {
+                "north": "loc.hall",
+                "east": "loc.grass",
+                "west": "loc.smoking_area",
+                "south": "loc.parking"
+            }
+        },
+        {
+            "id": "loc.grass",
+            "name": "Grass",
+            "description": "blabla",
+            "exits": {
+                "west": "loc.outside"
+            }
+        },
+        {
+            "id": "loc.wc",
+            "name": "WC",
+            "description": "blabla",
+            "exits": {
+                "east": "loc.hall"
+            }
+        },
+        {
+            "id": "loc.smoking_area",
+            "name": "Smoking Area",
+            "description": "blabla",
+            "exits": {
+                "east": "loc.outside"
+            }
+        },
+        {
+            "id": "loc.parking",
+            "name": "Parking",
+            "description": "blabla",
+            "exits": {
+                "north": "loc.outside"
+            }
+        }
+    ]
+}
