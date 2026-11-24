@@ -1,11 +1,13 @@
 package world
 
+import "github.com/samarkarian/TheAnswerProtocol/internal/direction"
+
 // Room defines a Room data
 type Room struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Exits       map[string]string `json:"exits"` // direction -> room ID
+	ID          string                         `json:"id"`
+	Name        string                         `json:"name"`
+	Description string                         `json:"description"`
+	Exits       map[direction.Direction]string `json:"exits"` // direction -> room ID
 }
 
 // World defines the world data
