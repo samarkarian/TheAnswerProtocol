@@ -1,0 +1,17 @@
+{
+    "spawn": "loc.hall",
+    "rooms": [
+        {
+            "id": "loc.hall",
+            "name": "Hall",
+            "description": "The entrance of the campus.",
+            "exits": { "north": "loc.bocal" }
+        },
+        {
+            "id": "loc.bocal",
+            "name": "Bocal",
+            "description": "The staff office.",
+            "exits": { "south": "loc.hall" }
+        }
+    ]
+}
