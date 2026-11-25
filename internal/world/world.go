@@ -40,8 +40,8 @@ type NPC struct {
 	Description string   `json:"description"`
 	Dialogue    []string `json:"dialogue"`
 	Hostile     bool     `json:"hostile"`
-	Stats       *Stats   `json:"stats"` // nil when the NPC has no stats; set for every hostile NPC
-	Respawn     int      `json:"respawn"`
+	Stats       *Stats   `json:"stats"`   // nil when the NPC has no stats; set for every hostile NPC
+	Respawn     int      `json:"respawn"` // delay before respawn
 }
 
 // QuestType is the kind of objective of a quest.
@@ -71,8 +71,8 @@ type Quest struct {
 	Type        QuestType `json:"type"`
 	Description string    `json:"description"`
 	Target      string    `json:"target"`
-	Count       int       `json:"count"`
-	Reward      string    `json:"reward"`
+	Count       int       `json:"count"`  // amount to bring
+	Reward      string    `json:"reward"` // item id
 	To          string    `json:"to"`
 }
 

@@ -111,7 +111,7 @@ func TestValidate(t *testing.T) {
 			mutate: func(t *testing.T, w *World) {
 				find(t, w, "loc.e").ID = "" // loc.c east now leads nowhere
 			},
-			wantErrs: []error{ErrValueIsEmpty, ErrRoomPrefix, ErrUnknownExit},
+			wantErrs: []error{ErrValueIsEmpty, ErrInvalidPrefix, ErrUnknownExit},
 		},
 		{
 			name: "id without prefix",
@@ -119,7 +119,7 @@ func TestValidate(t *testing.T) {
 				find(t, w, "loc.c").Exits[east] = "room.e"
 				find(t, w, "loc.e").ID = "room.e"
 			},
-			wantErrs:  []error{ErrRoomPrefix},
+			wantErrs:  []error{ErrInvalidPrefix},
 			wantInMsg: []string{"room.e"},
 		},
 		{
