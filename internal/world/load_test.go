@@ -31,9 +31,9 @@ func TestLoadValid(t *testing.T) {
 		t.Fatalf("len(Rooms) = %d, want 2", len(w.Rooms))
 	}
 
-	hall, ok := w.byID["loc.hall"]
+	hall, ok := w.rooms["loc.hall"]
 	if !ok {
-		t.Fatal(`byID has no "loc.hall"`)
+		t.Fatal(`rooms has no "loc.hall"`)
 	}
 	if hall.Name != "Hall" || hall.Description != "The entrance of the campus." {
 		t.Errorf("hall = %+v, want name and description from the file", hall)
@@ -41,13 +41,13 @@ func TestLoadValid(t *testing.T) {
 	if got := hall.Exits["north"]; got != "loc.bocal" {
 		t.Errorf(`hall.Exits["north"] = %q, want "loc.bocal"`, got)
 	}
-	if len(w.byID) != len(w.Rooms) {
-		t.Errorf("len(byID) = %d, want %d", len(w.byID), len(w.Rooms))
+	if len(w.rooms) != len(w.Rooms) {
+		t.Errorf("len(rooms) = %d, want %d", len(w.rooms), len(w.Rooms))
 	}
 
 	// The index must point into w.Rooms, not to copies.
 	if hall != &w.Rooms[0] {
-		t.Error(`byID["loc.hall"] does not point to w.Rooms[0]`)
+		t.Error(`rooms["loc.hall"] does not point to w.Rooms[0]`)
 	}
 }
 

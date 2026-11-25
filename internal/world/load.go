@@ -31,14 +31,14 @@ func Load(path string) (*World, error) {
 		return nil, fmt.Errorf("world: decode %s: unexpected data after the JSON object", path)
 	}
 
-	world.byID = make(map[string]*Room)
+	world.rooms = make(map[string]*Room)
 	for i := range world.Rooms {
 		roomID := world.Rooms[i].ID
-		_, ok := world.byID[roomID]
+		_, ok := world.rooms[roomID]
 		if ok {
 			return nil, fmt.Errorf("%w: %q", ErrDuplicateRoom, roomID)
 		}
-		world.byID[roomID] = &world.Rooms[i]
+		world.rooms[roomID] = &world.Rooms[i]
 	}
 
 	return &world, nil
