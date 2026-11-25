@@ -40,7 +40,7 @@ type NPC struct {
 	Description string   `json:"description"`
 	Dialogue    []string `json:"dialogue"`
 	Hostile     bool     `json:"hostile"`
-	Stats       *Stats   `json:"stats"`
+	Stats       *Stats   `json:"stats"` // nil when the NPC has no stats; set for every hostile NPC
 	Respawn     int      `json:"respawn"`
 }
 
