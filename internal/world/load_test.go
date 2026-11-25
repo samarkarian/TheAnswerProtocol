@@ -129,8 +129,14 @@ func TestLoadValid(t *testing.T) {
 	if !rat.Hostile || rat.Respawn != 30 {
 		t.Errorf("cockroach = %+v, want hostile with respawn 30", rat)
 	}
+	if guard.Stats != nil {
+		t.Errorf("guard.Stats = %+v, want nil (no \"stats\" in the file)", guard.Stats)
+	}
+	if rat.Stats == nil {
+		t.Fatal("cockroach.Stats is nil, want the stats from the file")
+	}
 	if rat.Stats.HP != 30 || rat.Stats.Attack != 8 || rat.Stats.Defense != 2 {
-		t.Errorf("cockroach stats = %+v, want hp 30, attack 8, defense 2", rat.Stats)
+		t.Errorf("cockroach stats = %+v, want hp 30, attack 8, defense 2", *rat.Stats)
 	}
 
 	// Quests
