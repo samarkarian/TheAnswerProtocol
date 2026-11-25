@@ -51,16 +51,15 @@ func HandleConnection(player *Player, registry *Registry, gameServer *GameServer
 				return
 			}
 		case "LOOK":
-			// if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
-			// 	return
-			// }
-			data, err := Look(gameServer, player.currentRoom, command)
+			_, err := Look(gameServer, player.currentRoom, command)
 			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
 				return
 			}
-			fmt.Println(data)
 		case "MOVE":
-			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
+			_, err := Move(gameServer, player.currentRoom, command, player)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
 				return
 			}
 		case "CHAT":
