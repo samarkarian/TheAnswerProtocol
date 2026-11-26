@@ -30,6 +30,7 @@ var (
 	ErrInvalidQuest           = errors.New("world: invalid quest")
 	ErrInvalidRespawn         = errors.New("world: respawn cannot be less than 0")
 	ErrEmptyDialogue          = errors.New("world: dialogue is empty")
+	ErrNotPlacedItem          = errors.New("world: not placed in rooms")
 	ErrNotPlaced              = errors.New("world: not placed in rooms")
 )
 
@@ -195,18 +196,31 @@ func (w *World) validateNPC(npc *NPC) []error {
 	return errs
 }
 
-// isPlaced returns an error if id (item or npc) is not found in rooms. The user is used for error description.
-func (w *World) isPlaced(user, id string) error {
+// isNPCPlaced returns an error if npc id is not placed in a room. The user is used for error description.
+func (w *World) isNPCPlaced(user, id string) error {
 	for i := range w.Rooms {
-		if slices.Contains(w.Rooms[i].NPCs, id) || slices.Contains(w.Rooms[i].Items, id) {
+		if slices.Contains(w.Rooms[i].NPCs, id) {
 			return nil
 		}
 	}
 	return fmt.Errorf("%w: %q is not placed in a room, used by %q", ErrNotPlaced, id, user)
 }
 
-// TODO: item for a fetch or deliver is placed in a room or obtain in another quest
-// TODO: NPC must be placed in one room only
+// isItemPlaced returns an error if item id is not placed in a room, nor is it obtained as a quest reward. The user is used for error description.
+func (w *World) isItemPlaced(user, id string) error {
+	for i := range w.Rooms {
+		if slices.Contains(w.Rooms[i].Items, id) {
+			return nil
+		}
+	}
+	for i := range w.Quests {
+		if w.Quests[i].ID != user && w.Quests[i].Reward == id {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: %q is not placed in a room, nor is it obtained as a quest reward, used by %q", ErrNotPlaced, id, user)
+}
+
 // validateQuest returns every problem found in quest.
 func (w *World) validateQuest(quest *Quest) []error {
 	errs := checkID("quest", "quest.", quest.ID)
@@ -220,7 +234,7 @@ func (w *World) validateQuest(quest *Quest) []error {
 		if _, exists := w.NPC(quest.Giver); !exists {
 			errs = append(errs, fmt.Errorf("%w: %q for 'giver' in %s", ErrUnknownNPC, quest.Giver, quest.ID))
 		} else {
-			errs = append(errs, w.isPlaced(quest.ID, quest.Giver))
+			errs = append(errs, w.isNPCPlaced(quest.ID, quest.Giver))
 		}
 	}
 
@@ -241,7 +255,7 @@ func (w *World) validateQuest(quest *Quest) []error {
 				errs = append(errs, fmt.Errorf("%w: %q, item %q must be obtainable for a %q quest", ErrInvalidQuest, quest.ID, item.ID, quest.Type))
 			}
 			if exists {
-				errs = append(errs, w.isPlaced(quest.ID, item.ID))
+				errs = append(errs, w.isItemPlaced(quest.ID, item.ID))
 			}
 		}
 	case QuestDefeat:
@@ -256,7 +270,7 @@ func (w *World) validateQuest(quest *Quest) []error {
 				errs = append(errs, fmt.Errorf("%w: %q, NPC %q must be hostile for a %q quest", ErrInvalidQuest, quest.ID, npc.ID, quest.Type))
 			}
 			if exists {
-				errs = append(errs, w.isPlaced(quest.ID, npc.ID))
+				errs = append(errs, w.isNPCPlaced(quest.ID, npc.ID))
 			}
 		}
 		// no default because if unknown type, it's handled before

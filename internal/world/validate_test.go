@@ -563,6 +563,16 @@ func TestValidate(t *testing.T) {
 			wantErrs:  []error{ErrNotPlaced},
 			wantInMsg: []string{"item.badge", "quest.fetch", "quest.deliver"},
 		},
+		{
+			name: "unplaced item but reward of quest",
+			mutate: func(t *testing.T, w *World) {
+				w.Quests[1].Reward = find(t, w, "loc.b").Items[0]
+				find(t, w, "loc.b").Items = []string{}
+
+			},
+			wantErrs:  []error{},
+			wantInMsg: []string{},
+		},
 
 		// Map structure
 		{
