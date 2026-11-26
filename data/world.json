@@ -1,0 +1,290 @@
+{
+    "spawn": "loc.hall",
+    "player": {
+        "hp": 100,
+        "attack": 10,
+        "defense": 5,
+        "respawn_hp": 50
+    },
+    "rooms": [
+        {
+            "id": "loc.hall",
+            "name": "Hall",
+            "description": "The main entrance of the campus. Students come and go through the glass doors.",
+            "exits": {
+                "north": "loc.bocal",
+                "east": "loc.gaming_room",
+                "south": "loc.outside",
+                "west": "loc.wc"
+            },
+            "items": [],
+            "npcs": ["npc.security_guard"]
+        },
+        {
+            "id": "loc.bocal",
+            "name": "Bocal",
+            "description": "The staff office, full of screens and paperwork. Everyone calls it the Bocal.",
+            "exits": {
+                "north": "loc.cluster",
+                "south": "loc.hall"
+            },
+            "items": ["item.coffee"],
+            "npcs": ["npc.bocal_staff"]
+        },
+        {
+            "id": "loc.cluster",
+            "name": "Cluster",
+            "description": "Rows of iMacs hum quietly. Students stare at their code in silence.",
+            "exits": {
+                "east": "loc.break_room",
+                "south": "loc.bocal"
+            },
+            "items": ["item.usb_key", "item.signed_form"],
+            "npcs": ["npc.peer_tutor"]
+        },
+        {
+            "id": "loc.break_room",
+            "name": "Break Room",
+            "description": "Old sofas and a vending machine. A good place to rest between two projects.",
+            "exits": {
+                "east": "loc.lunch_room",
+                "west": "loc.cluster"
+            },
+            "items": ["item.broom", "item.vending_machine"],
+            "npcs": ["npc.janitor"]
+        },
+        {
+            "id": "loc.lunch_room",
+            "name": "Lunch Room",
+            "description": "Long tables and a row of microwaves. Something scuttles under the fridge.",
+            "exits": {
+                "south": "loc.snack",
+                "west": "loc.break_room"
+            },
+            "items": [],
+            "npcs": ["npc.giant_cockroach"]
+        },
+        {
+            "id": "loc.snack",
+            "name": "Snacking Area",
+            "description": "Shelves of snacks and a coffee machine that never stops.",
+            "exits": {
+                "north": "loc.lunch_room",
+                "south": "loc.cluster2"
+            },
+            "items": [],
+            "npcs": []
+        },
+        {
+            "id": "loc.cluster2",
+            "name": "Cluster 2",
+            "description": "A second cluster, quieter than the first. Someone left a terminal open.",
+            "exits": {
+                "north": "loc.snack",
+                "west": "loc.gaming_room"
+            },
+            "items": [],
+            "npcs": []
+        },
+        {
+            "id": "loc.gaming_room",
+            "name": "Gaming Room",
+            "description": "Consoles, arcade cabinets and a lot of shouting.",
+            "exits": {
+                "east": "loc.cluster2",
+                "west": "loc.hall"
+            },
+            "items": [],
+            "npcs": []
+        },
+        {
+            "id": "loc.outside",
+            "name": "Outside",
+            "description": "The courtyard in front of the campus. Bikes are chained to the railings.",
+            "exits": {
+                "north": "loc.hall",
+                "east": "loc.grass",
+                "south": "loc.parking",
+                "west": "loc.smoking_area"
+            },
+            "items": [],
+            "npcs": []
+        },
+        {
+            "id": "loc.grass",
+            "name": "Grass",
+            "description": "A patch of grass where students eat lunch when the sun is out.",
+            "exits": {
+                "west": "loc.outside"
+            },
+            "items": [],
+            "npcs": []
+        },
+        {
+            "id": "loc.wc",
+            "name": "WC",
+            "description": "Clean, bright and surprisingly quiet.",
+            "exits": {
+                "east": "loc.hall"
+            },
+            "items": [],
+            "npcs": []
+        },
+        {
+            "id": "loc.smoking_area",
+            "name": "Smoking Area",
+            "description": "A bench and an ashtray, a little away from the entrance.",
+            "exits": {
+                "east": "loc.outside"
+            },
+            "items": [],
+            "npcs": []
+        },
+        {
+            "id": "loc.parking",
+            "name": "Parking",
+            "description": "Rows of cars and scooters. The road to the city starts here.",
+            "exits": {
+                "north": "loc.outside"
+            },
+            "items": [],
+            "npcs": []
+        }
+    ],
+    "items": [
+        {
+            "id": "item.coffee",
+            "name": "Coffee",
+            "description": "A hot cup of coffee. Restores 30 HP.",
+            "obtainable": true
+        },
+        {
+            "id": "item.usb_key",
+            "name": "USB Key",
+            "description": "A USB key with a Bocal sticker on it.",
+            "obtainable": true
+        },
+        {
+            "id": "item.signed_form",
+            "name": "Signed Form",
+            "description": "A form signed by a peer tutor, addressed to the security guard.",
+            "obtainable": true
+        },
+        {
+            "id": "item.broom",
+            "name": "Broom",
+            "description": "Not a sword, but it will do against a cockroach.",
+            "obtainable": true
+        },
+        {
+            "id": "item.vending_machine",
+            "name": "Vending Machine",
+            "description": "Far too heavy to carry. It hums softly.",
+            "obtainable": false
+        },
+        {
+            "id": "item.meal_ticket",
+            "name": "Meal Ticket",
+            "description": "A free meal, offered by the Bocal.",
+            "obtainable": true
+        },
+        {
+            "id": "item.cleaning_gloves",
+            "name": "Cleaning Gloves",
+            "description": "Thick gloves from the janitor. Nothing bites through them.",
+            "obtainable": true
+        },
+        {
+            "id": "item.locker_key",
+            "name": "Locker Key",
+            "description": "The key to a locker in the hall, given by the peer tutor.",
+            "obtainable": true
+        }
+    ],
+    "npcs": [
+        {
+            "id": "npc.security_guard",
+            "name": "Security Guard",
+            "description": "A stern guard checks every badge at the entrance.",
+            "dialogue": [
+                "Badge, please.",
+                "The clusters are upstairs, past the Bocal.",
+                "Nothing to report at the entrance."
+            ],
+            "hostile": false
+        },
+        {
+            "id": "npc.bocal_staff",
+            "name": "Bocal Staff",
+            "description": "A staff member types fast, surrounded by three screens.",
+            "dialogue": [
+                "Welcome to 42!",
+                "I lost my USB key somewhere in the Cluster."
+            ],
+            "hostile": false
+        },
+        {
+            "id": "npc.peer_tutor",
+            "name": "Peer Tutor",
+            "description": "A student helps others without looking up from the screen.",
+            "dialogue": [
+                "Stuck on your project? Ask a peer.",
+                "Could you bring this form to the Security Guard?"
+            ],
+            "hostile": false
+        },
+        {
+            "id": "npc.janitor",
+            "name": "Janitor",
+            "description": "He leans on his cart and sighs at the mess.",
+            "dialogue": [
+                "A giant cockroach lives in the Lunch Room.",
+                "Don't touch the vending machine, it eats coins."
+            ],
+            "hostile": false
+        },
+        {
+            "id": "npc.giant_cockroach",
+            "name": "Giant Cockroach",
+            "description": "A cockroach the size of a cat, with shiny brown wings.",
+            "dialogue": ["Skrrr!"],
+            "hostile": true,
+            "stats": {
+                "hp": 30,
+                "attack": 8,
+                "defense": 2
+            },
+            "respawn": 30
+        }
+    ],
+    "quests": [
+        {
+            "id": "quest.lost_usb_key",
+            "giver": "npc.bocal_staff",
+            "type": "fetch",
+            "description": "Find my USB Key in the Cluster and bring it back to the Bocal.",
+            "target": "item.usb_key",
+            "count": 1,
+            "reward": "item.meal_ticket"
+        },
+        {
+            "id": "quest.cockroach_hunt",
+            "giver": "npc.janitor",
+            "type": "defeat",
+            "description": "Chase the Giant Cockroach out of the Lunch Room, twice.",
+            "target": "npc.giant_cockroach",
+            "count": 2,
+            "reward": "item.cleaning_gloves"
+        },
+        {
+            "id": "quest.deliver_form",
+            "giver": "npc.peer_tutor",
+            "type": "deliver",
+            "description": "Bring the Signed Form to the Security Guard in the Hall.",
+            "target": "item.signed_form",
+            "to": "npc.security_guard",
+            "count": 1,
+            "reward": "item.locker_key"
+        }
+    ]
+}
