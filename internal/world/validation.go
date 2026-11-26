@@ -329,14 +329,16 @@ func (w *World) validateQuest(quest *Quest) []error {
 //     leads to an existing room, and that room has the return exit
 //   - the items and NPCs placed in a room exist
 //   - every NPC has at least one line of dialogue and a respawn delay
-//     that is not negative; a hostile NPC has stats
+//     that is not negative; a hostile NPC has stats; an NPC is placed at most once
 //   - all stats have a positive HP and no negative attack or defense,
 //     and the player has a positive respawn_hp
 //   - every quest has a known type, an existing giver NPC, an existing
 //     reward item and a count of at least 1. Its target is an obtainable
 //     item for a fetch or deliver quest, or a hostile NPC for a defeat quest.
 //     A deliver quest also needs an existing NPC in "to", which is ignored
-//     for the other types.
+//     for the other types. Its giver, its defeat target and its recipient are
+//     placed in a room. Its fetch or deliver item is placed in a room or given
+//     by another quest.
 //
 // If the spawn and the rooms are valid, it also checks the structure of the map:
 //   - every room can be reached from the spawn
