@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -542,6 +543,16 @@ func TestValidate(t *testing.T) {
 			mutate:    func(t *testing.T, w *World) { findQuest(t, w, "quest.defeat").Target = "npc.guard" },
 			wantErrs:  []error{ErrInvalidQuest},
 			wantInMsg: []string{"npc.guard"},
+		},
+
+		// Quests: unplaced item or npc
+		{
+			name: "unplaced giver",
+			mutate: func(t *testing.T, w *World) {
+				find(t, w, "loc.b").NPCs = slices.Delete(find(t, w, "loc.b").NPCs, 0, 1)
+			},
+			wantErrs:  []error{ErrNotPlaced},
+			wantInMsg: []string{"npc.staff", "quest.fetch", "quest.deliver"},
 		},
 
 		// Map structure

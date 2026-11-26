@@ -30,6 +30,7 @@ var (
 	ErrInvalidQuest           = errors.New("world: invalid quest")
 	ErrInvalidRespawn         = errors.New("world: respawn cannot be less than 0")
 	ErrEmptyDialogue          = errors.New("world: dialogue is empty")
+	ErrNotPlaced              = errors.New("world: not placed in rooms")
 )
 
 // checkID returns the problems of the ID of an element of the given kind,
@@ -194,7 +195,16 @@ func (w *World) validateNPC(npc *NPC) []error {
 	return errs
 }
 
-// TODO: check giver is placed in a room
+// isPlaced returns an error if id (item or npc) is not found in rooms. The user is used for error description.
+func (w *World) isPlaced(user, id string) error {
+	for i := range w.Rooms {
+		if slices.Contains(w.Rooms[i].NPCs, id) || slices.Contains(w.Rooms[i].Items, id) {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: %q is not placed in a room, used by %q", ErrNotPlaced, id, user)
+}
+
 // TODO: deliver or target is placed in a room
 // TODO: item for a fetch or deliver is placed in a room or obtain in another quest
 // TODO: NPC must be placed in one room only
@@ -210,6 +220,8 @@ func (w *World) validateQuest(quest *Quest) []error {
 	if err == nil {
 		if _, exists := w.NPC(quest.Giver); !exists {
 			errs = append(errs, fmt.Errorf("%w: %q for 'giver' in %s", ErrUnknownNPC, quest.Giver, quest.ID))
+		} else {
+			errs = append(errs, w.isPlaced(quest.ID, quest.Giver))
 		}
 	}
 
