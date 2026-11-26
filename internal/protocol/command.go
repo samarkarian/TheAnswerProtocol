@@ -86,3 +86,8 @@ func ParseGroupArgs(cmdArgs string) (string, string, error) {
 		return "", "", ErrMalformedCommand
 	}
 }
+
+func ParseNoArgs(cmdArgs string) bool {
+
+	return strings.TrimSpace(cmdArgs) == ""
+}

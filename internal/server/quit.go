@@ -8,7 +8,7 @@ import (
 )
 
 func Quit(player *Player) {
-	s, err := protocol.FormatOK("bye")
+	response, err := protocol.FormatOK("bye")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrSendFailed)); err != nil {
@@ -16,7 +16,7 @@ func Quit(player *Player) {
 		}
 		return
 	}
-	if _, err := fmt.Fprint(player.conn, s); err != nil {
+	if _, err := fmt.Fprint(player.conn, response); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
 }

@@ -2,34 +2,43 @@ package server
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/samarkarian/TheAnswerProtocol/internal/direction"
 	"github.com/samarkarian/TheAnswerProtocol/internal/protocol"
 )
 
-func Move(gameServer *GameServer, currentRoom string, command protocol.Command, player *Player) (string, error) {
-	dataRoom := gameServer.Game.Rooms[currentRoom]
+func Move(gameServer *GameServer, command protocol.Command, player *Player, registry *Registry) (string, error) {
 
-	s, err := protocol.FormatOKJSON(dataRoom)
+	registry.mu.Lock()
+	defer registry.mu.Unlock()
+
+	dataRoom, ok := gameServer.Game.Room(player.currentRoom)
+	if !ok {
+		return "", errors.New("room not found")
+	}
+
+	if command.Args == "" {
+		return protocol.FormatErr(protocol.ErrBadRequest), nil
+	}
+
+	dir, ok := direction.Parse(command.Args)
+	if !ok {
+		return protocol.FormatErr(protocol.ErrNoExit), nil
+	}
+
+	roomID, ok := dataRoom.Exits[dir]
+	if !ok {
+		return protocol.FormatErr(protocol.ErrNoExit), nil
+	}
+
+	s := fmt.Sprintf("room=%s", roomID)
+	response, err := protocol.FormatOK(s)
 	if err != nil {
 		return "", err
 	}
+	player.currentRoom = roomID
 
-	// Check si exits existe avec le file d'Ethan quand il est prêt
+	return response, nil
 
-	is_here := 0
-	dir := ""
-	for key, value := range dataRoom.Exits {
-		if command.Args == key {
-			dir = value
-			is_here = 1
-		}
-	}
-
-	if is_here == 0 {
-		return "s", errors.New("Exit not found")
-	} else {
-		player.currentRoom = dir
-	}
-
-	return s, nil
 }

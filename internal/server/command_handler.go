@@ -46,67 +46,77 @@ func HandleConnection(player *Player, registry *Registry, gameServer *GameServer
 			continue
 		}
 		switch command.Name {
-		case "CONNECT":
+		case protocol.CmdConnect:
 			if closeConn := Connect(player, command, registry); closeConn {
 				return
 			}
-		case "LOOK":
-			_, err := Look(gameServer, player.currentRoom, command)
+		case protocol.CmdLook:
+			response, err := Look(gameServer, player.currentRoom, command, registry)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				response = protocol.FormatErr(protocol.ErrSendFailed)
+			}
+			_, err = fmt.Fprint(player.conn, response)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				return
 			}
-		case "MOVE":
-			_, err := Move(gameServer, player.currentRoom, command, player)
+		case protocol.CmdMove:
+			response, err := Move(gameServer, command, player, registry)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				response = protocol.FormatErr(protocol.ErrSendFailed)
+			}
+			_, err = fmt.Fprint(player.conn, response)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				return
 			}
-		case "CHAT":
+		case protocol.CmdChat:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "WHO":
+		case protocol.CmdWho:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "GROUP":
+		case protocol.CmdGroup:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "TAKE":
+		case protocol.CmdTake:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "DROP":
+		case protocol.CmdDrop:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "INVENTORY":
+		case protocol.CmdInventory:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "TALK":
+		case protocol.CmdTalk:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "ATTACK":
+		case protocol.CmdAttack:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "STATUS":
+		case protocol.CmdStatus:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "QUEST":
+		case protocol.CmdQuest:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "QUESTS":
+		case protocol.CmdQuests:
 			if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrBadRequest)); err != nil {
 				return
 			}
-		case "QUIT":
+		case protocol.CmdQuit:
 			Quit(player)
 			return
 		default:

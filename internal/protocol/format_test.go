@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"github.com/samarkarian/TheAnswerProtocol/internal/direction"
 )
 
 // Every Format function checks the whole line with ValidateLine: a "\n" or
@@ -71,7 +73,7 @@ func TestFormatOKJSON(t *testing.T) {
 					ID:          "loc.square",
 					Name:        "Village Square",
 					Description: "The heart of the village.",
-					Exits:       map[string]string{"north": "loc.bakery"},
+					Exits:       map[direction.Direction]string{"north": "loc.bakery"},
 				},
 				Players: []string{"alice"},
 				Items:   []string{},

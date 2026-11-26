@@ -30,7 +30,7 @@ func Connect(player *Player, command protocol.Command, registry *Registry) bool 
 		}
 		return false
 	}
-	s, err := protocol.FormatOK("connected")
+	response, err := protocol.FormatOK("connected")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		if _, err := fmt.Fprint(player.conn, protocol.FormatErr(protocol.ErrConnectionFailed)); err != nil {
@@ -38,7 +38,7 @@ func Connect(player *Player, command protocol.Command, registry *Registry) bool 
 		}
 		return true
 	}
-	if _, err := fmt.Fprint(player.conn, s); err != nil {
+	if _, err := fmt.Fprint(player.conn, response); err != nil {
 		return true
 	}
 	return false

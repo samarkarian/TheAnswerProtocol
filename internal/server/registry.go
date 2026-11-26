@@ -37,3 +37,18 @@ func (registry *Registry) Remove(name string) {
 	delete(registry.players, name)
 
 }
+
+func (registry *Registry) getPlayersInRoom(currentRoom string) []string {
+
+	registry.mu.Lock()
+	defer registry.mu.Unlock()
+
+	players := []string{}
+	for k, v := range registry.players {
+		if v.currentRoom == currentRoom {
+			players = append(players, k)
+		}
+	}
+
+	return players
+}
