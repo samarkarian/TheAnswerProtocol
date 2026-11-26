@@ -30,6 +30,8 @@ var (
 	ErrInvalidQuest           = errors.New("world: invalid quest")
 	ErrInvalidRespawn         = errors.New("world: respawn cannot be less than 0")
 	ErrEmptyDialogue          = errors.New("world: dialogue is empty")
+	ErrNPCPlacedMoreThanOnce  = errors.New("world: NPC is placed more than once")
+	ErrNotPlaced              = errors.New("world: not placed in rooms")
 )
 
 // checkID returns the problems of the ID of an element of the given kind,
@@ -110,6 +112,7 @@ func (w *World) validateRoom(room *Room) []error {
 			errs = append(errs, fmt.Errorf("%w: %q in %s", ErrUnknownItem, item, room.ID))
 		}
 	}
+
 	for _, npc := range room.NPCs {
 		if _, exists := w.NPC(npc); !exists {
 			errs = append(errs, fmt.Errorf("%w: %q in %s", ErrUnknownNPC, npc, room.ID))
@@ -191,13 +194,45 @@ func (w *World) validateNPC(npc *NPC) []error {
 	if len(npc.Dialogue) == 0 {
 		errs = append(errs, fmt.Errorf("%w: %s", ErrEmptyDialogue, npc.ID))
 	}
+	rooms := []string{}
+	for i := range w.Rooms {
+		for _, id := range w.Rooms[i].NPCs {
+			if id == npc.ID {
+				rooms = append(rooms, w.Rooms[i].ID)
+			}
+		}
+	}
+	if len(rooms) > 1 {
+		errs = append(errs, fmt.Errorf("%w: %q in %s", ErrNPCPlacedMoreThanOnce, npc.ID, strings.Join(rooms, ", ")))
+	}
 	return errs
 }
 
-// TODO: check giver is placed in a room
-// TODO: deliver or target is placed in a room
-// TODO: item for a fetch or deliver is placed in a room or obtain in another quest
-// TODO: NPC must be placed in one room only
+// checkNPCPlaced returns an error if npc id is not placed in a room. The usedBy is used for error description.
+func (w *World) checkNPCPlaced(usedBy, id string) error {
+	for i := range w.Rooms {
+		if slices.Contains(w.Rooms[i].NPCs, id) {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: %q is not placed in a room, used by %q", ErrNotPlaced, id, usedBy)
+}
+
+// checkItemPlaced returns an error if item id is not placed in a room, nor is it obtained as a quest reward. The usedBy is used for error description.
+func (w *World) checkItemPlaced(usedBy, id string) error {
+	for i := range w.Rooms {
+		if slices.Contains(w.Rooms[i].Items, id) {
+			return nil
+		}
+	}
+	for i := range w.Quests {
+		if w.Quests[i].ID != usedBy && w.Quests[i].Reward == id {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: %q is not placed in a room, nor is it obtained as a quest reward, used by %q", ErrNotPlaced, id, usedBy)
+}
+
 // validateQuest returns every problem found in quest.
 func (w *World) validateQuest(quest *Quest) []error {
 	errs := checkID("quest", "quest.", quest.ID)
@@ -210,6 +245,8 @@ func (w *World) validateQuest(quest *Quest) []error {
 	if err == nil {
 		if _, exists := w.NPC(quest.Giver); !exists {
 			errs = append(errs, fmt.Errorf("%w: %q for 'giver' in %s", ErrUnknownNPC, quest.Giver, quest.ID))
+		} else {
+			errs = append(errs, w.checkNPCPlaced(quest.ID, quest.Giver))
 		}
 	}
 
@@ -229,6 +266,9 @@ func (w *World) validateQuest(quest *Quest) []error {
 			} else if !item.Obtainable {
 				errs = append(errs, fmt.Errorf("%w: %q, item %q must be obtainable for a %q quest", ErrInvalidQuest, quest.ID, item.ID, quest.Type))
 			}
+			if exists {
+				errs = append(errs, w.checkItemPlaced(quest.ID, item.ID))
+			}
 		}
 	case QuestDefeat:
 		// must be hostile
@@ -241,6 +281,9 @@ func (w *World) validateQuest(quest *Quest) []error {
 			} else if !npc.Hostile {
 				errs = append(errs, fmt.Errorf("%w: %q, NPC %q must be hostile for a %q quest", ErrInvalidQuest, quest.ID, npc.ID, quest.Type))
 			}
+			if exists {
+				errs = append(errs, w.checkNPCPlaced(quest.ID, npc.ID))
+			}
 		}
 		// no default because if unknown type, it's handled before
 	}
@@ -249,6 +292,8 @@ func (w *World) validateQuest(quest *Quest) []error {
 		if strings.TrimSpace(quest.To) != "" {
 			if _, exists := w.NPC(quest.To); !exists {
 				errs = append(errs, fmt.Errorf("%w: %q for 'to' in %s", ErrUnknownNPC, quest.To, quest.ID))
+			} else {
+				errs = append(errs, w.checkNPCPlaced(quest.ID, quest.To))
 			}
 		} else {
 			errs = append(errs, fmt.Errorf("%w: %s 'to' cannot be empty with type %q", ErrInvalidQuest, quest.ID, quest.Type))
@@ -284,14 +329,16 @@ func (w *World) validateQuest(quest *Quest) []error {
 //     leads to an existing room, and that room has the return exit
 //   - the items and NPCs placed in a room exist
 //   - every NPC has at least one line of dialogue and a respawn delay
-//     that is not negative; a hostile NPC has stats
+//     that is not negative; a hostile NPC has stats; an NPC is placed at most once
 //   - all stats have a positive HP and no negative attack or defense,
 //     and the player has a positive respawn_hp
 //   - every quest has a known type, an existing giver NPC, an existing
 //     reward item and a count of at least 1. Its target is an obtainable
 //     item for a fetch or deliver quest, or a hostile NPC for a defeat quest.
 //     A deliver quest also needs an existing NPC in "to", which is ignored
-//     for the other types.
+//     for the other types. Its giver, its defeat target and its recipient are
+//     placed in a room. Its fetch or deliver item is placed in a room or given
+//     by another quest.
 //
 // If the spawn and the rooms are valid, it also checks the structure of the map:
 //   - every room can be reached from the spawn

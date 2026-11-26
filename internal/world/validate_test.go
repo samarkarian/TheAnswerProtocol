@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -176,6 +177,7 @@ func TestValidate(t *testing.T) {
 			mutate: func(t *testing.T, w *World) {
 				w.Rooms = w.Rooms[:4] // remove loc.e
 				delete(find(t, w, "loc.c").Exits, east)
+				w.Quests = slices.DeleteFunc(w.Quests, func(q Quest) bool { return q.ID == "quest.defeat" })
 			},
 		},
 		{
@@ -542,6 +544,72 @@ func TestValidate(t *testing.T) {
 			mutate:    func(t *testing.T, w *World) { findQuest(t, w, "quest.defeat").Target = "npc.guard" },
 			wantErrs:  []error{ErrInvalidQuest},
 			wantInMsg: []string{"npc.guard"},
+		},
+
+		// Quests: unplaced item or npc
+		{
+			name: "unplaced giver",
+			mutate: func(t *testing.T, w *World) {
+				find(t, w, "loc.b").NPCs = slices.Delete(find(t, w, "loc.b").NPCs, 0, 1)
+			},
+			wantErrs:  []error{ErrNotPlaced},
+			wantInMsg: []string{"npc.staff", "quest.fetch", "quest.deliver"},
+		},
+		{
+			name: "unplaced item",
+			mutate: func(t *testing.T, w *World) {
+				find(t, w, "loc.b").Items = slices.Delete(find(t, w, "loc.b").Items, 0, 1)
+			},
+			wantErrs:  []error{ErrNotPlaced},
+			wantInMsg: []string{"item.badge", "quest.fetch", "quest.deliver"},
+		},
+		{
+			name: "unplaced item but reward of quest",
+			mutate: func(t *testing.T, w *World) {
+				findQuest(t, w, "quest.defeat").Reward = find(t, w, "loc.b").Items[0]
+				find(t, w, "loc.b").Items = []string{}
+			},
+		},
+		{
+			name: "unplaced deliver recipient",
+			mutate: func(t *testing.T, w *World) {
+				find(t, w, "loc.a").NPCs = []string{}
+			},
+			wantErrs:  []error{ErrNotPlaced},
+			wantInMsg: []string{"npc.guard", "quest.deliver"},
+		},
+		{
+			name: "npc placed twice in the same room",
+			mutate: func(t *testing.T, w *World) {
+				a := find(t, w, "loc.a")
+				a.NPCs = append(a.NPCs, "npc.guard")
+			},
+			wantErrs:  []error{ErrNPCPlacedMoreThanOnce},
+			wantInMsg: []string{"npc.guard", "loc.a"},
+		},
+		{
+			name: "npc placed in two rooms",
+			mutate: func(t *testing.T, w *World) {
+				d := find(t, w, "loc.d")
+				d.NPCs = append(d.NPCs, "npc.guard")
+			},
+			wantErrs:  []error{ErrNPCPlacedMoreThanOnce},
+			wantInMsg: []string{"npc.guard", "loc.a", "loc.d"},
+		},
+		{
+			name:      "unplaced defeat target",
+			mutate:    func(t *testing.T, w *World) { find(t, w, "loc.e").NPCs = nil },
+			wantErrs:  []error{ErrNotPlaced},
+			wantInMsg: []string{"npc.rat", "quest.defeat"},
+		},
+		{
+			name: "item only given by its own quest",
+			mutate: func(t *testing.T, w *World) {
+				find(t, w, "loc.b").Items = nil
+				findQuest(t, w, "quest.fetch").Reward = "item.badge"
+			},
+			wantErrs:  []error{ErrNotPlaced},
+			wantInMsg: []string{"item.badge", "quest.fetch"},
 		},
 
 		// Map structure
