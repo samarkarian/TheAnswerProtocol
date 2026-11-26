@@ -16,6 +16,7 @@ var (
 	ErrInvalidPrefix          = errors.New("world: invalid prefix")
 	ErrIsolatedRoom           = errors.New("world: room does not have exit")
 	ErrMissingReturnExit      = errors.New("world: missing return exit")
+	ErrDuplicateNPC           = errors.New("world: duplicate NPC in room")
 	ErrUnknownExit            = errors.New("world: exit leads to an unknown room")
 	ErrUnknownDirection       = errors.New("world: direction does not exist")
 	ErrNoLoop                 = errors.New("world: no loop")
@@ -112,9 +113,18 @@ func (w *World) validateRoom(room *Room) []error {
 			errs = append(errs, fmt.Errorf("%w: %q in %s", ErrUnknownItem, item, room.ID))
 		}
 	}
-	for _, npc := range room.NPCs {
+	foundDuplicate := []string{}
+	for i, npc := range room.NPCs {
 		if _, exists := w.NPC(npc); !exists {
 			errs = append(errs, fmt.Errorf("%w: %q in %s", ErrUnknownNPC, npc, room.ID))
+		} else if !slices.Contains(foundDuplicate, npc) { // check for duplicate
+			for j, otherNPC := range room.NPCs {
+				if i != j && npc == otherNPC {
+					foundDuplicate = append(foundDuplicate, npc) // so we don't append twice
+					errs = append(errs, fmt.Errorf("%w: %q in %s", ErrDuplicateNPC, npc, room.ID))
+					break
+				}
+			}
 		}
 	}
 	return errs
