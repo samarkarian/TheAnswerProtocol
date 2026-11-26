@@ -177,6 +177,7 @@ func TestValidate(t *testing.T) {
 			mutate: func(t *testing.T, w *World) {
 				w.Rooms = w.Rooms[:4] // remove loc.e
 				delete(find(t, w, "loc.c").Exits, east)
+				w.Quests = slices.Delete(w.Quests, 1, 2) // delete quest because npc is in loc.e
 			},
 		},
 		{
@@ -553,6 +554,14 @@ func TestValidate(t *testing.T) {
 			},
 			wantErrs:  []error{ErrNotPlaced},
 			wantInMsg: []string{"npc.staff", "quest.fetch", "quest.deliver"},
+		},
+		{
+			name: "unplaced item",
+			mutate: func(t *testing.T, w *World) {
+				find(t, w, "loc.b").Items = slices.Delete(find(t, w, "loc.b").Items, 0, 1)
+			},
+			wantErrs:  []error{ErrNotPlaced},
+			wantInMsg: []string{"item.badge", "quest.fetch", "quest.deliver"},
 		},
 
 		// Map structure

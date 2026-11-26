@@ -205,7 +205,6 @@ func (w *World) isPlaced(user, id string) error {
 	return fmt.Errorf("%w: %q is not placed in a room, used by %q", ErrNotPlaced, id, user)
 }
 
-// TODO: deliver or target is placed in a room
 // TODO: item for a fetch or deliver is placed in a room or obtain in another quest
 // TODO: NPC must be placed in one room only
 // validateQuest returns every problem found in quest.
@@ -241,6 +240,9 @@ func (w *World) validateQuest(quest *Quest) []error {
 			} else if !item.Obtainable {
 				errs = append(errs, fmt.Errorf("%w: %q, item %q must be obtainable for a %q quest", ErrInvalidQuest, quest.ID, item.ID, quest.Type))
 			}
+			if exists {
+				errs = append(errs, w.isPlaced(quest.ID, item.ID))
+			}
 		}
 	case QuestDefeat:
 		// must be hostile
@@ -252,6 +254,9 @@ func (w *World) validateQuest(quest *Quest) []error {
 				errs = append(errs, fmt.Errorf("%w: %q for 'target' in %s", ErrUnknownNPC, quest.Target, quest.ID))
 			} else if !npc.Hostile {
 				errs = append(errs, fmt.Errorf("%w: %q, NPC %q must be hostile for a %q quest", ErrInvalidQuest, quest.ID, npc.ID, quest.Type))
+			}
+			if exists {
+				errs = append(errs, w.isPlaced(quest.ID, npc.ID))
 			}
 		}
 		// no default because if unknown type, it's handled before
