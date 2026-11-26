@@ -31,7 +31,7 @@ var (
 	ErrInvalidQuest           = errors.New("world: invalid quest")
 	ErrInvalidRespawn         = errors.New("world: respawn cannot be less than 0")
 	ErrEmptyDialogue          = errors.New("world: dialogue is empty")
-	ErrNotPlacedItem          = errors.New("world: not placed in rooms")
+	ErrNPCPlacedMoreThanOne   = errors.New("world: NPC is placed more than one time")
 	ErrNotPlaced              = errors.New("world: not placed in rooms")
 )
 
@@ -202,6 +202,15 @@ func (w *World) validateNPC(npc *NPC) []error {
 	}
 	if len(npc.Dialogue) == 0 {
 		errs = append(errs, fmt.Errorf("%w: %s", ErrEmptyDialogue, npc.ID))
+	}
+	placedRooms := []string{}
+	for i := range w.Rooms {
+		if slices.Contains(w.Rooms[i].NPCs, npc.ID) {
+			placedRooms = append(placedRooms, "'"+w.Rooms[i].ID+"'")
+		}
+	}
+	if len(placedRooms) > 1 {
+		errs = append(errs, fmt.Errorf("%w: %q in %s", ErrNPCPlacedMoreThanOne, npc.ID, strings.Join(placedRooms, ", ")))
 	}
 	return errs
 }
