@@ -573,6 +573,14 @@ func TestValidate(t *testing.T) {
 			wantErrs:  []error{},
 			wantInMsg: []string{},
 		},
+		{
+			name: "unplaced deliver",
+			mutate: func(t *testing.T, w *World) {
+				find(t, w, "loc.a").NPCs = []string{}
+			},
+			wantErrs:  []error{ErrNotPlaced},
+			wantInMsg: []string{"npc.guard", "quest.deliver"},
+		},
 
 		// Map structure
 		{

@@ -280,6 +280,8 @@ func (w *World) validateQuest(quest *Quest) []error {
 		if strings.TrimSpace(quest.To) != "" {
 			if _, exists := w.NPC(quest.To); !exists {
 				errs = append(errs, fmt.Errorf("%w: %q for 'to' in %s", ErrUnknownNPC, quest.To, quest.ID))
+			} else {
+				errs = append(errs, w.isNPCPlaced(quest.ID, quest.To))
 			}
 		} else {
 			errs = append(errs, fmt.Errorf("%w: %s 'to' cannot be empty with type %q", ErrInvalidQuest, quest.ID, quest.Type))
