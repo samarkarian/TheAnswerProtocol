@@ -10,7 +10,7 @@ import (
 func main() {
 	err := server.Start()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, "[ERR]:", err)
 		os.Exit(1)
 	}
 }

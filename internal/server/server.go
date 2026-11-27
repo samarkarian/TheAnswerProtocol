@@ -6,12 +6,39 @@ import (
 	"os"
 
 	"github.com/samarkarian/TheAnswerProtocol/internal/protocol"
+	"github.com/samarkarian/TheAnswerProtocol/internal/world"
 )
+
+type GameServer struct {
+	Game *world.World
+}
+
+func LoadGameData() (*world.World, error) {
+
+	game, err := world.Load("data/world.json")
+	if err != nil {
+		return nil, err
+	}
+
+	err = game.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return game, nil
+}
 
 func Start() error {
 
-	ln, err := net.Listen("tcp", "0.0.0.0:4243")
+	game, err := LoadGameData()
+	if err != nil {
+		return err
+	}
+	gameServer := GameServer{
+		Game: game,
+	}
 
+	ln, err := net.Listen("tcp", "0.0.0.0:4243")
 	if err != nil {
 		return err
 	}
@@ -37,6 +64,6 @@ func Start() error {
 		if _, err := fmt.Fprint(conn, s); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
-		go HandleConnection(NewPlayer(conn), registry)
+		go HandleConnection(NewPlayer(conn, gameServer.Game.Spawn), registry, &gameServer)
 	}
 }

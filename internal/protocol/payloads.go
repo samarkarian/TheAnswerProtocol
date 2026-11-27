@@ -1,11 +1,15 @@
 package protocol
 
+import (
+	"github.com/samarkarian/TheAnswerProtocol/internal/direction"
+)
+
 // LOOK
 type Room struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Exits       map[string]string `json:"exits"` // direction in key, room id in value
+	ID          string                         `json:"id"`
+	Name        string                         `json:"name"`
+	Description string                         `json:"description"`
+	Exits       map[direction.Direction]string `json:"exits"` // direction in key, room id in value
 }
 
 type LookResponse struct {
